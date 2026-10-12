@@ -811,6 +811,10 @@
 - [x] U188b 暫停選單、過關畫面範本加底框：`Center/List` 外面包一層 `PanelContainer`，底色跟著 `palette`；「預設」配色補深色半透明面板色；
 	  `W4_SkinBox` 的示範暫停選單、過關畫面一起改（驗證：`tests/ui/PauseMenuTemplateTest.tscn`、`tests/ui/ClearScreenTemplateTest.tscn`）
 　　→ 講師決定（U188 時提出）：選單沒有自己的底框，遊戲畫面花的時候看不清楚；暫停選單、過關畫面都加。學員已經再製出去的不會跟著改
+- [x] U188c `Juice_TextPopup.size` 改成下拉（12／24／36，預設 12）；展示間的 20 號字改成 12（U188 盤點漏掉的）
+	  （驗證：`tests/juice/_extra/Juice_TextPopupTest.tscn`、`levels/Showroom.tscn`）
+　　→ 講師決定（U188 時提出）：跳字預設 11、拉桿 8～32，關掉抗鋸齒後不是 12 倍數會筆畫粗細不一，改成跟 `UIRoot.font_size` 一樣的下拉。
+　　　展示間的標籤框只有 80 寬、間隔 96，改 24 會互相重疊，所以改 12
 - [ ] U189 `TitleScreenTemplate`：標題畫面（獨立場景、設為主場景）；`MenuAction` 加「開始遊戲」（下拉選關卡）、「回標題」（回主場景）；
 	  換場景前自動載入的狀態歸零；暫停選單、過關畫面範本加「回標題」；外觀變體 2 個
 	  （驗證：`tests/ui/TitleScreenTemplateTest.tscn`、`tests/ui/TitleFlowTest.tscn`）

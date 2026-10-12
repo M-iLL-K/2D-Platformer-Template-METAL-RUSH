@@ -160,7 +160,7 @@ func clear_juice(source: Node) -> void:
 
 | 檔名 | 中文名 | 說明 |
 |---|---|---|
-| `Juice_TextPopup` | 跳字 | 持續型：數值變化時在玩家頭上跳出「+1 金幣」「-1 血量」，往上飄、淡出。`kind`（全部數值／只有血量／自訂）、`custom_kind`（選「自訂」才出現，打字欄位四點防呆）、`color`（加綠減紅／白／黃）、`size`、`duration`。0.3 秒內同一種數值連續變化合併成一個字；死亡到重生之間的變化不跳 |
+| `Juice_TextPopup` | 跳字 | 持續型：數值變化時在玩家頭上跳出「+1 金幣」「-1 血量」，往上飄、淡出。`kind`（全部數值／只有血量／自訂）、`custom_kind`（選「自訂」才出現，打字欄位四點防呆）、`color`（加綠減紅／白／黃）、`size`（下拉 12／24／36，像素字只能放大整數倍）、`duration`。0.3 秒內同一種數值連續變化合併成一個字；死亡到重生之間的變化不跳 |
 | `Juice_ScreenFlash` | 全螢幕閃光 | 整個畫面閃一下顏色（`CanvasLayer` + `ColorRect`），預設受傷時閃紅。`color`（白／紅／黃／黑）、`strength`（濃度）、`duration`；不受頓幀影響 |
 | `Juice_Tilt` | 傾斜 | 持續型：跑步時身體往前傾，停下回正（`set_juice_tilt`，以腳底為中心）。`strength`（最多傾幾度）、`duration`（反應快慢）、`in_air`（空中也傾斜）；重力翻轉、左右翻面後一樣往前進方向傾 |
 | `Juice_DeathBurst` | 死亡爆散 | 死亡時角色圖切成方塊噴開（受重力、轉圈、淡掉）、角色隱形（`set_juice_tint` 透明），重生時恢復。不用選觸發時機，也可以把訊號連到 `play()`。`piece_size`、`strength`、`duration`；最多 64 塊，超過自動把碎塊切大 |
