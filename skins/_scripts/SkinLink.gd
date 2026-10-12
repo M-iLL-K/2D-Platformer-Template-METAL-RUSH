@@ -10,6 +10,10 @@ extends RefCounted
 const BLOCK_VISUAL_NAMES := ["Visual", "BodyVisual"]
 # 這些零件是敵人：動畫名稱用「走路」「受傷」「死亡」
 const _ENEMY_SCRIPTS := ["res://blocks/_scripts/Enemy.gd", "res://blocks/_scripts/EnemyShooter.gd"]
+# 這些零件有方向（direction 下拉），皮勾了 follow_direction 會跟著轉；值是每個選項要轉幾度（圖畫成朝上）
+const _DIRECTIONAL_SCRIPTS := {
+	"res://blocks/_scripts/Fan.gd": [0.0, 180.0, -90.0, 90.0],  # 上、下、左、右
+}
 # 狀態改變後沒有另外的圖時，平常的圖往狀態顏色染多少（0～1）
 const _TINT_STRENGTH := 0.6
 # 尖刺、岩漿關掉時變暗的顏色（跟色塊原本變暗的程度一樣）
@@ -22,11 +26,15 @@ const LOOK_EFFECT_ONLY := 2
 var _owner: Node = null
 var _rect: CanvasItem = null
 var _skin: Node2D = null
+var _skin_origin := Vector2.ZERO
+var _rect_origin := Vector2.ZERO
 
 # 找零件底下的皮並套上；color_rect 是零件原本的色塊
 func _init(owner: Node, color_rect: CanvasItem) -> void:
 	_owner = owner
 	_rect = color_rect
+	if _rect is Control:
+		_rect_origin = (_rect as Control).position
 	for child in owner.get_children():
 		if not child.has_method("skin_setup"):
 			continue
@@ -43,6 +51,7 @@ func _init(owner: Node, color_rect: CanvasItem) -> void:
 		_skin.visible = false
 		_skin = null
 		return
+	_skin_origin = _skin.position
 	if _rect != null:
 		_rect.visible = false
 
@@ -100,6 +109,13 @@ func set_visible(value: bool) -> void:
 	elif _rect != null:
 		_rect.visible = value
 
+# 零件抖一下：offset 是離原本位置多遠，傳 Vector2.ZERO 回到原位（例如崩塌地板快碎掉）
+func set_shake(offset: Vector2) -> void:
+	if _skin != null:
+		_skin.position = _skin_origin + offset
+	elif _rect is Control:
+		(_rect as Control).position = _rect_origin + offset
+
 # 零件面向左邊還是右邊（敵人轉向），皮勾了 follow_facing 才會翻
 func set_facing(facing_left: bool) -> void:
 	if _skin != null:
@@ -116,6 +132,19 @@ func play(anim_name: String) -> void:
 static func is_enemy_host(node: Node) -> bool:
 	var host_script: Script = node.get_script() if node != null else null
 	return host_script != null and host_script.resource_path in _ENEMY_SCRIPTS
+
+# 這個零件有沒有方向（風扇吹的方向），皮可以跟著轉
+static func is_directional_host(node: Node) -> bool:
+	var host_script: Script = node.get_script() if node != null else null
+	return host_script != null and _DIRECTIONAL_SCRIPTS.has(host_script.resource_path)
+
+# 這個零件現在的方向要把皮轉幾度（弧度）；沒有方向的零件回傳 0
+static func host_angle(node: Node) -> float:
+	if not is_directional_host(node):
+		return 0.0
+	var angles: Array = _DIRECTIONAL_SCRIPTS[node.get_script().resource_path]
+	var index := int(node.get("direction"))
+	return deg_to_rad(angles[index]) if index >= 0 and index < angles.size() else 0.0
 
 # 這個節點是不是 Player → Visual（皮放在這裡當角色的圖）
 static func is_player_visual(node: Node) -> bool:

@@ -5,40 +5,87 @@ extends AnimatedSprite2D
 # 動畫名稱照固定清單取：一般零件「平常」「啟動」（啟動＝狀態改變後）；敵人「走路」「受傷」「死亡」。
 # 遊戲開始時零件會藏起原本的色塊、改播這裡的動畫。
 # 編輯器裡的黃色虛線框是原本色塊的範圍：碰撞範圍不會跟著圖片變，圖要畫在框裡。
+# fill_style 選「拉伸蓋滿」時，位置和大小自動對齊色塊（動畫沒辦法重複鋪滿，要鋪滿請用 Skin）。
 
 ## 要不要跟著零件左右翻（敵人轉向）
 @export var follow_facing: bool = true
 ## 狀態改變後怎麼顯示：只換成「啟動」動畫、換動畫之外再加零件原本的效果（變色、變淡、藏起來、變暗），
 ## 或不換動畫只用原本的效果；沒有「啟動」動畫時一律用原本的效果
 @export_enum("換圖就好", "換圖再加原本效果", "只用原本效果") var active_style: int = 0
+## 動畫怎麼蓋住零件：只放一張（位置大小自己調）、拉伸蓋滿（自動對齊原本色塊的範圍，零件拉大拉小也跟著變）
+@export_enum("只放一張", "拉伸蓋滿") var fill_style: int = 0:
+	set(value):
+		fill_style = value
+		_fit()
+## 要不要跟著零件的方向轉（風扇吹的方向）；動畫請畫成朝上吹
+@export var follow_direction: bool = true
 
 const NORMAL := "平常"
 const ACTIVE := "啟動"
 const WALK := "走路"
 const HURT := "受傷"
 const DIE := "死亡"
+const FILL_STRETCH := 1
 # 編輯器裡每隔幾秒重新檢查動畫名稱（學員一邊改 Sprite Frames，驚嘆號一邊更新）
 const _CHECK_SECONDS := 1.0
 
 var _base := NORMAL   # 沒有指定的動畫時播哪一段（一般零件「平常」、敵人「走路」）
 var _check_timer := 0.0
 
-# 編輯器裡持續重畫外框、檢查動畫名稱
+# 編輯器裡持續重畫外框、檢查動畫名稱；換一格就重新對齊（每格大小可能不一樣）
 func _ready() -> void:
 	set_process(Engine.is_editor_hint())
+	frame_changed.connect(_fit)
+	animation_changed.connect(_fit)
+	_fit()
 
-# 編輯器裡每一幀重畫外框，每隔一段時間重新檢查動畫名稱
+# 編輯器裡每一幀重畫外框、跟著零件的大小方向重新對齊，每隔一段時間重新檢查動畫名稱
 func _process(delta: float) -> void:
 	queue_redraw()
+	_fit()
 	_check_timer += delta
 	if _check_timer >= _CHECK_SECONDS:
 		_check_timer = 0.0
 		update_configuration_warnings()
 
-# 被拖到別的地方時重新檢查黃色驚嘆號
+# 被拖到別的地方時重新檢查黃色驚嘆號、Inspector 要顯示哪些欄位
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PARENTED or what == NOTIFICATION_UNPARENTED:
 		update_configuration_warnings()
+		notify_property_list_changed()
+
+# 用不到的欄位不顯示：不在零件底下時的 fill_style、零件沒有方向時的 follow_direction
+func _validate_property(property: Dictionary) -> void:
+	if property.name == "fill_style" and SkinLink.block_visual(get_parent()) == null:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+	elif property.name == "follow_direction" and not SkinLink.is_directional_host(get_parent()):
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+
+# 跟著零件的方向轉；拉伸蓋滿時把位置和大小對齊原本色塊的範圍（依現在這一格的大小）
+func _fit() -> void:
+	var host := get_parent()
+	if host == null:
+		return
+	if follow_direction and SkinLink.is_directional_host(host):
+		var angle := SkinLink.host_angle(host)
+		if not is_equal_approx(rotation, angle):
+			rotation = angle
+	var visual := SkinLink.block_visual(host)
+	if fill_style != FILL_STRETCH or visual == null or sprite_frames == null:
+		return
+	if not sprite_frames.has_animation(animation) or sprite_frames.get_frame_count(animation) == 0:
+		return
+	var frame_texture := sprite_frames.get_frame_texture(animation, frame)
+	if frame_texture == null or frame_texture.get_width() == 0 or frame_texture.get_height() == 0:
+		return
+	var rect := Rect2(visual.position, visual.size)
+	centered = true
+	offset = Vector2.ZERO
+	if position != rect.get_center():
+		position = rect.get_center()
+	var target_scale := rect.size / frame_texture.get_size()
+	if scale != target_scale:
+		scale = target_scale
 
 # 編輯器裡畫原本色塊的虛線外框
 func _draw() -> void:

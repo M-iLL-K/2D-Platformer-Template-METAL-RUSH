@@ -7,6 +7,3 @@ build/
 
 # 保留匯出設定（學員需要它才能一鍵打包）
 !export_presets.cfg
-
-# 講師自己放的測試素材，與用這些素材的本機測試場景（不進 git）
-tests/skins/_art/

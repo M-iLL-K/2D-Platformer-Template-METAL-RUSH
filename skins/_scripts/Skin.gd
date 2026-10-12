@@ -4,13 +4,14 @@ extends Sprite2D
 # 零件的皮（靜態圖）：在關卡裡選一個零件（終點、門、敵人…），把這個拖進去當子節點，再把圖片拖進 texture_normal。
 # 遊戲開始時零件會藏起原本的色塊、改顯示這張圖；狀態改變時換成 texture_active（空白就把平常的圖變色）。
 # 編輯器裡的黃色虛線框是原本色塊的範圍：碰撞範圍不會跟著圖片變，圖要畫在框裡。
+# fill_style 選「重複鋪滿」「拉伸蓋滿」時，位置和大小自動對齊色塊（可以拉大小的無反彈方塊、單向平台用得到）。
 # 也可以放在 Player → Visual 底下當角色的圖。
 
 ## 平常的樣子：從檔案系統把圖片拖進來
 @export var texture_normal: Texture2D:
 	set(value):
 		texture_normal = value
-		texture = value
+		_show(value)
 		update_configuration_warnings()
 ## 狀態改變後的樣子（終點踩到、按鈕亮起、門打開、重生點啟用、開關方塊關掉、尖刺岩漿關掉…）；空白就用平常的圖再變色表示
 @export var texture_active: Texture2D:
@@ -20,29 +21,50 @@ extends Sprite2D
 ## 狀態改變後怎麼顯示：只換成 texture_active、換圖之外再加零件原本的效果（變色、變淡、藏起來、變暗），
 ## 或不換圖只用原本的效果
 @export_enum("換圖就好", "換圖再加原本效果", "只用原本效果") var active_style: int = 0
+## 圖怎麼蓋住零件：只放一張（位置大小自己調）、重複鋪滿、拉伸蓋滿；
+## 後兩個會自動對齊原本色塊的範圍，零件拉大拉小也跟著變
+@export_enum("只放一張", "重複鋪滿", "拉伸蓋滿") var fill_style: int = 0:
+	set(value):
+		fill_style = value
+		_show(_shown)
 ## 要不要跟著零件左右翻（敵人轉向）
 @export var follow_facing: bool = true
+## 要不要跟著零件的方向轉（風扇吹的方向）；圖請畫成朝上吹
+@export var follow_direction: bool = true
+
+const FILL_ONE := 0
+const FILL_TILE := 1
+const FILL_STRETCH := 2
+
+var _shown: Texture2D = null  # 現在顯示的是哪一張（平常或狀態改變後）
+var _tile_textures := {}  # 從圖集切出來的圖要重複鋪滿時，先轉成單張圖（圖集直接重複會鋪到整張大圖）
 
 # 顯示平常的圖；編輯器裡持續重畫外框（零件大小改了框跟著變）
 func _ready() -> void:
-	texture = texture_normal
+	_show(texture_normal)
 	set_process(Engine.is_editor_hint())
 
-# 編輯器裡每一幀重畫外框
+# 編輯器裡每一幀重畫外框，並跟著零件的大小、方向重新對齊
 func _process(_delta: float) -> void:
 	queue_redraw()
+	_fit()
 
-# 被拖到別的地方時重新檢查黃色驚嘆號
+# 被拖到別的地方時重新檢查黃色驚嘆號、Inspector 要顯示哪些欄位
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PARENTED or what == NOTIFICATION_UNPARENTED:
 		update_configuration_warnings()
+		notify_property_list_changed()
 
 # texture 由 texture_normal 決定，不存進場景檔、Inspector 也不顯示，免得學員拖錯格；
-# 沒有 texture_active 時 active_style 沒有意義，也不顯示
+# 用不到的欄位不顯示：沒有 texture_active 時的 active_style、不在零件底下時的 fill_style、零件沒有方向時的 follow_direction
 func _validate_property(property: Dictionary) -> void:
 	if property.name == "texture":
 		property.usage = PROPERTY_USAGE_NONE
 	elif property.name == "active_style" and texture_active == null:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+	elif property.name == "fill_style" and SkinLink.block_visual(get_parent()) == null:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+	elif property.name == "follow_direction" and not SkinLink.is_directional_host(get_parent()):
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 
 # 編輯器裡畫原本色塊的虛線外框
@@ -60,11 +82,54 @@ func _get_configuration_warnings() -> PackedStringArray:
 		warnings.append("texture_normal 是空的：從檔案系統把圖片拖進來，不然遊戲中還是顯示原本的色塊")
 	return warnings
 
+# 換成顯示 tex，依 fill_style 準備重複鋪滿用的圖，再對齊零件
+func _show(tex: Texture2D) -> void:
+	_shown = tex
+	var tile := fill_style == FILL_TILE and tex != null
+	texture = _tile_texture(tex) if tile else tex
+	region_enabled = tile
+	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED if tile else CanvasItem.TEXTURE_REPEAT_PARENT_NODE
+	_fit()
+
+# 重複鋪滿用的圖：從圖集切出來的圖轉成單張圖，其他的直接用
+func _tile_texture(tex: Texture2D) -> Texture2D:
+	if not (tex is AtlasTexture):
+		return tex
+	if not _tile_textures.has(tex):
+		var image := tex.get_image()
+		_tile_textures[tex] = ImageTexture.create_from_image(image) if image != null else tex
+	return _tile_textures[tex]
+
+# 跟著零件的方向轉；重複鋪滿、拉伸蓋滿時把位置和大小對齊原本色塊的範圍
+func _fit() -> void:
+	var host := get_parent()
+	if host == null:
+		return
+	if follow_direction and SkinLink.is_directional_host(host):
+		var angle := SkinLink.host_angle(host)
+		if not is_equal_approx(rotation, angle):
+			rotation = angle
+	var visual := SkinLink.block_visual(host)
+	if fill_style == FILL_ONE or visual == null or texture == null:
+		return
+	var rect := Rect2(visual.position, visual.size)
+	centered = true
+	offset = Vector2.ZERO
+	if position != rect.get_center():
+		position = rect.get_center()
+	var target_scale := Vector2.ONE
+	if fill_style == FILL_TILE:
+		region_rect = Rect2(Vector2.ZERO, rect.size)
+	elif _shown.get_width() > 0 and _shown.get_height() > 0:
+		target_scale = rect.size / _shown.get_size()
+	if scale != target_scale:
+		scale = target_scale
+
 # 零件開場時呼叫：能用回傳空字串，不能用回傳原因
 func skin_setup(_is_enemy: bool) -> String:
 	if texture_normal == null:
 		return "texture_normal 是空的，請把圖片拖進來"
-	texture = texture_normal
+	_show(texture_normal)
 	return ""
 
 # 零件呼叫：狀態改變後要怎麼顯示（SkinLink.LOOK_…）；沒有 texture_active 時只能用原本的效果
@@ -73,7 +138,9 @@ func skin_active_look() -> int:
 
 # 零件呼叫：換成 texture_active（use_active）或平常的圖，再用 tint 染色／變淡（不加效果時是白色）
 func skin_set_state(use_active: bool, tint: Color) -> void:
-	texture = texture_active if use_active and texture_active != null else texture_normal
+	var tex := texture_active if use_active and texture_active != null else texture_normal
+	if tex != _shown:
+		_show(tex)
 	self_modulate = tint
 
 # 零件呼叫：面向左邊時翻過來（follow_facing 有勾才翻）

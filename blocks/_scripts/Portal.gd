@@ -31,13 +31,12 @@ const _LINE_COLOR := Color(0.75, 0.45, 1.0, 0.8)
 # 編輯器裡每隔幾秒重新檢查一次目的地，學員改了 pair 或別座傳送門之後黃色警告會跟著更新
 const _WARNING_REFRESH_SECONDS := 1.0
 
-@onready var _visual: ColorRect = $Visual
-
 var _pair_portal: Portal = null
 var _destination: Node2D = null  # 實際傳過去的位置：配對的傳送門，或 pair 指定的其他東西
 var _warning_timer: float = 0.0
 var _cooldown_until: Dictionary = {}  # body(Node) -> 時間戳，避免傳送過去立刻被傳回來
 var _active: bool = true
+var _skin: SkinLink = null
 
 ## 開啟：開始傳送；開啟當下已經站在裡面的也會被傳走
 func activate() -> void:
@@ -73,11 +72,12 @@ func _enter_tree() -> void:
 	elif target is Node2D:
 		_destination = target
 
-# 設定碰撞層／遮罩，箱子要不要能傳依 allow_boxes 決定
+# 設定碰撞層／遮罩，箱子要不要能傳依 allow_boxes 決定；底下有皮就換上皮
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 	add_to_group("signal_source")
+	_skin = SkinLink.new(self, $Visual)
 	collision_layer = Layers.SENSOR
 	collision_mask = Layers.PLAYER | (Layers.BOX if allow_boxes else 0)
 	body_entered.connect(_on_body_entered)
@@ -93,10 +93,10 @@ func _is_valid(body: Node) -> bool:
 		return true
 	return allow_boxes and body.is_in_group("box")
 
-# 切換開關狀態，關掉時變暗讓學員看得出它沒在運作
+# 切換開關狀態，關掉時變暗（有皮就換皮的樣子）讓學員看得出它沒在運作
 func _set_active(is_active: bool) -> void:
 	_active = is_active
-	_visual.modulate = Color.WHITE if _active else Color(0.45, 0.45, 0.45)
+	_skin.show_dark(not _active)
 
 # 有東西站進來：傳到配對的另一座，0.3 秒內不會再次觸發（不管是這座還是另一座）；關著時不傳
 func _on_body_entered(body: Node) -> void:
