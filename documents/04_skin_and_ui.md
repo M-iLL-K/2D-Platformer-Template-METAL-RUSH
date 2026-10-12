@@ -299,6 +299,8 @@ const TIMELINE := "時間軸"
   會跟 Juice 打架：文件提醒「動畫只改 frame（第幾格），不要改大小和顏色」，並在編輯器檢查動畫軌道，有改就黃色驚嘆號。
 - 地基需要：`Ability_Melee`、`Ability_Ranged` 新增 `attacked` 訊號（揮擊／射擊那一下發出），`PlayerAnimator` 自己找到並聽它，不用學員連。
 - 檢查動畫名稱時跟 §6.2 一樣：列出現有的名稱、附近似名稱建議（例如「跑」→「跑步」）。
+- 轉向翻面（講師決定，U183）：`follow_facing`（預設勾），翻 Visual 底下圖的 Flip H，以編輯器裡勾好的 Flip H 當朝右；
+  自動奔跑卡已經翻 Visual 時不再翻一次。Juice 總開關關掉時停在待機、不翻面。
 
 ### 7.2 自訂動畫
 

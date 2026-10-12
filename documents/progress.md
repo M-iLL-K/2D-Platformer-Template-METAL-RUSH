@@ -767,7 +767,11 @@
 - [x] U182 `Ability_Melee`／`Ability_Ranged` 新增 `attacked` 訊號
 	  （驗證：`tests/abilities/AttackedSignalTest.tscn`）
 　　→ 實作：訊號放在 `AbilityBase`（所有攻擊能力共用），近戰生成判定區、遠程發射子彈的那一下發出（遠程的 `shoot()` 也算）；冷卻中按了沒反應的不發
-- [ ] U183 `Juice_Animator`（找播放器、依狀態切換、缺動畫的退路、名稱檢查、動畫改了 scale／modulate 的警告、`play_custom`）
+- [x] U183 `Juice_Animator`（找播放器、依狀態切換、缺動畫的退路、名稱檢查、動畫改了 scale／modulate 的警告、`play_custom`）
+	  （驗證：`tests/juice/AnimatorSpriteTest.tscn`、`tests/juice/AnimatorPlayerTest.tscn`）
+　　→ 講師決定：角色轉向翻面由 `Juice_Animator` 負責（`follow_facing`，預設勾）：翻 Visual 底下圖的 Flip H，以編輯器裡勾好的 Flip H 當朝右
+　　　（圖朝左畫的勾 Flip H，跟敵人同一套）；自動奔跑卡已經翻 Visual 時不再翻一次。沒放 `Juice_Animator` 角色不翻（跟以前一樣）
+　　→ 實作：名稱不在清單裡、但跟清單很像的動畫（「跑」→「跑步」）也出黃色驚嘆號；死亡動畫勾了循環也只播一輪、停在最後一格
 
 ## 階段 52：地形與收尾
 
