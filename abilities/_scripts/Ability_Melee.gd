@@ -19,6 +19,9 @@ extends AbilityBase
 ## 傷害
 @export_range(1, 10) var damage: int = 1
 
+## 揮擊的圖：從檔案系統把圖片拖進來（畫成往右揮，往左攻擊時會自動翻過來）；空白就用原本的色塊
+@export var slash_texture: Texture2D
+
 const _HITBOX_SCENE := preload("res://abilities/MeleeHitbox.tscn")
 const _HITBOX_DURATION := 0.15
 
@@ -53,6 +56,7 @@ func _on_attack_pressed() -> void:
 	_hitbox.lifetime_left = _HITBOX_DURATION
 	_hitbox.attacker = player
 	add_child(_hitbox)
+	_hitbox.set_texture(slash_texture)
 
 # 每一幀處理冷卻倒數
 func _process(delta: float) -> void:

@@ -757,7 +757,10 @@
 	  （驗證：`tests/skins/SkinEventTest.tscn`）
 　　→ 實作：零件馬上消失的事件（道具被撿、可破壞／崩塌地板碎掉、敵人被打倒）不列進下拉；兩個欄位空白時自動選第一個能用的；
 　　　事件動畫播的期間狀態改變先記著，播完回到現在的狀態（例如按鈕閃完停在「啟動」）；勾了循環也只播一輪
-- [ ] U181 `Ability_Ranged`／`EnemyShooter` 的 `bullet_texture`、`Ability_Melee` 的 `slash_texture`
+- [x] U181 `Ability_Ranged`／`EnemyShooter` 的 `bullet_texture`、`Ability_Melee` 的 `slash_texture`
+	  （驗證：`tests/skins/AttackSkinTest.tscn`）
+　　→ 實作：子彈的圖畫成朝右飛，飛行時跟著方向轉（拋物線也一路頭朝前）；揮擊的圖畫成往右揮，放在原本色塊的中心，往左攻擊時跟著翻；
+　　　空白照舊顯示色塊、不警告
 
 ## 階段 51：角色動畫
 

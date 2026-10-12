@@ -31,6 +31,9 @@ extends AbilityBase
 ## 每顆子彈打中造成的傷害
 @export_range(1, 10) var damage: int = 1
 
+## 子彈的圖：從檔案系統把圖片拖進來（畫成朝右飛，飛行時會跟著方向轉）；空白就用原本的色塊
+@export var bullet_texture: Texture2D
+
 ## 開槍時角色被往反方向推的力道，0 代表沒有後座力
 ## （把後座力卡的 fired 連到 shoot() 時，推力已經由後座力卡負責，這裡通常保持 0）
 @export_range(0.0, 800.0) var recoil_strength: float = 0.0
@@ -79,6 +82,7 @@ func _fire() -> void:
 	bullet.lifetime_left = lifetime
 	bullet.max_distance = max_range_tiles * _TILE_SIZE
 	bullet.damage = damage
+	bullet.set_texture(bullet_texture)
 	if recoil_strength > 0.0:
 		player.add_impulse(-direction * recoil_strength)
 

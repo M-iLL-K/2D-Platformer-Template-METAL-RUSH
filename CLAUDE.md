@@ -102,6 +102,8 @@ Claude Code 在這個專案裡的所有對話回覆、進度回報、驗收結�
 空白就用預設的（不警告）；最上層不是 `UIRoot`、種類拖錯欄位、跟直接放進關卡的同一種畫面重複時，黃色驚嘆號＋執行時中文警告，改用預設的（見 `documents/04_skin_and_ui.md` §3.1）。
 `Skin.texture_normal`／`texture_active`（`Texture2D`）同屬資源欄位例外：學員把圖片拖進來；`texture_normal` 空白時黃色驚嘆號＋執行時中文警告，零件照舊顯示色塊；
 `texture_active` 空白就把平常的圖變色，不警告（見 `documents/04_skin_and_ui.md` §6.1）。
+`Ability_Ranged.bullet_texture`／`EnemyShooter.bullet_texture`／`Ability_Melee.slash_texture`（`Texture2D`）同屬資源欄位例外：學員把子彈、揮擊的圖拖進來；
+空白就照舊顯示色塊，不警告（見 `documents/04_skin_and_ui.md` §6.3）。
 
 ### 5. 組件之間不准打架
 
