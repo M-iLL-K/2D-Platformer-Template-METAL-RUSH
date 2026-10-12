@@ -869,6 +869,11 @@
 　　→ 實作：只當出口的那座編輯器不出驚嘆號，玩家站進去時輸出面板提醒一次怎麼做成雙向；
 　　　展示間與測試場景（Showroom、PortalTest、HazardToggleTest、MoreBlockSkinTest）的 B 補上指回 A，維持原本的雙向；
 　　　PortalTest 加一組單向（C → D）；pair 指到不是傳送門的東西時，警告拿掉「只能單向」的字樣
+- [x] U196 `AreaTrigger` 觸發區：遊戲中看不見的範圍，走進發 `entered`、都離開發 `exited`；`width_tiles`／`height_tiles`、
+	  `triggered_by`＋`tag`（同按鈕）、`trigger_mode` 每次進入／只有第一次進入、`reset_on_death`（驗證：`tests/blocks/AreaTriggerTest.tscn`）
+　　→ 講師決定（U195 後提出）：沒有能自訂範圍的觸發零件，學員只能拿按鈕湊。照提案做，預設只有玩家會觸發
+　　→ 實作：碰撞範圍由程式建，每個觸發區各自一份形狀（拉一個不會改到別的）；範圍裡已經有東西時再進來的不重複發 entered；
+　　　「只有第一次進入」觸發後不發 exited；兩個訊號都沒連時執行時中文提醒（同按鍵觸發器）。展示間沒有加
 
 ## 之後再做（構想，還沒排進單元）
 

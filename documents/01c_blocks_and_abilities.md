@@ -36,6 +36,7 @@
 |---|---|---|---|---|
 | 按鈕 | `Button.tscn` | 感應 | `mode`（踩住才開／踩一下切換／踩一下永久開／被攻擊觸發）、`pressed_by`（玩家與箱子／只有玩家／只有箱子／指定群組）、`tag`（群組名稱，只在選「指定群組」時顯示）、`reset_on_death`（死亡重生時回到關著，預設不勾） | `turned_on`、`turned_off` |
 | 按鍵觸發器 | `KeyTrigger.tscn` | 無 | `key_source`（自訂按鍵／滑鼠左鍵／滑鼠右鍵／滑鼠中鍵／跟基本操作同一顆鍵）、`key` 或 `same_key_as`（依來源顯示其一，選滑鼠按鍵時都不顯示）、`trigger`（按下時／放開時／按住時（每一幀）） | `triggered`（學員用）；進階：`pressed`、`released`、`hold_started`、`hold_ended`、`held(seconds)` |
+| 觸發區 | `AreaTrigger.tscn` | 感應（遊戲中看不見） | `width_tiles`／`height_tiles`（1～40 格）、`triggered_by`（只有玩家／玩家與箱子／只有箱子／指定群組，預設只有玩家）、`tag`（群組名稱，只在選「指定群組」時顯示，防呆同按鈕）、`trigger_mode`（每次進入／只有第一次進入）、`reset_on_death`（只有第一次進入時才顯示；重生後可以再觸發） | `entered`、`exited` |
 | 傳送門 | `Portal.tscn` | 感應 | `pair`（目的地：另一座傳送門，或其他東西＋警告；每座只管自己，要雙向兩座互相指定）、`keep_velocity`（保留速度，預設開）、`allow_boxes`（箱子也能傳）、`start_on`（一開始就開；關著時站進來不傳，但另一座傳過來照樣會出現）；可連接 `activate`、`deactivate`、`toggle` | `teleported` |
 | 重生點 | `Checkpoint.tscn` | 感應 | 無 | `reached` |
 | 終點 | `Goal.tscn` | 感應 | 無 | `reached` |

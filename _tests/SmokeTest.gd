@@ -140,6 +140,10 @@ func _run_all_steps() -> void:
 	# 16. 畫面風格檢查（只在編輯器出黃色驚嘆號，這裡直接用檢查的規則算）：糊的、非整數縮放的抓得到，正常的不誤報
 	await _test_style_check()
 
+	# 16b. 觸發區：玩家走進走出、只有第一次進入、沒連線（會警告），拔掉
+	await _test_area_trigger()
+	await _assert_can_move("觸發區測試")
+
 	# 17. 瞇眼測試：開著的時候照常玩、暫停中開關、拔掉
 	await _test_squint()
 	await _assert_can_move("瞇眼測試")
@@ -712,6 +716,34 @@ func _test_style_check() -> void:
 	if StyleCheck._most_common([1.0, 1.0, 1.0, 2.0, 0.25] as Array[float]) != 1.0:
 		_fail("風格檢查：像素大小的多數算錯")
 	scene.queue_free()
+	await _wait_frames(2)
+
+# 觸發區圍住玩家：進出各發一次訊號；只有第一次進入的不重複發
+func _test_area_trigger() -> void:
+	var scene: PackedScene = load("res://blocks/AreaTrigger.tscn")
+	var every: Node2D = scene.instantiate()
+	var once: Node2D = scene.instantiate()
+	once.trigger_mode = 1
+	var counts := {"entered": 0, "exited": 0, "once": 0}
+	every.entered.connect(func(): counts.entered += 1)
+	every.exited.connect(func(): counts.exited += 1)
+	once.entered.connect(func(): counts.once += 1)
+	var home := _player.global_position
+	for t in [every, once]:
+		t.global_position = home + Vector2(200, 0)
+		add_child(t)
+	await _wait_frames(3)
+	for i in 2:
+		_player.global_position = home + Vector2(200, 0)
+		await get_tree().physics_frame
+		await _wait_frames(3)
+		_player.global_position = home
+		await get_tree().physics_frame
+		await _wait_frames(3)
+	if counts.entered != 2 or counts.exited != 2 or counts.once != 1:
+		_fail("觸發區的訊號次數不對：%s（應該是進 2、出 2、只有第一次 1）" % counts)
+	every.queue_free()
+	once.queue_free()
 	await _wait_frames(2)
 
 # 瞇眼測試開著時遊戲照常、暫停中也能開關，拔掉後不留東西
