@@ -787,7 +787,12 @@
 　　→ 實作：W3_JuiceBox 的路線與 Juice（拿掉咕嚕眼，角色圖自己有眼睛）；角色 AnimatedSprite2D＋`Juice_Animator`；
 　　　金幣、尖刺、終點套 `Skin`，敵人套 `SkinAnimated`（拉伸蓋滿）；HUD 直接拖進關卡（接法 B，愛心圖示＋金幣圖、糖果配色），
 　　　暫停選單（暗色）、過關畫面（復古綠）接在 `UISettings`（接法 A），場景放 `levels/_starts/_W4SkinBox/ui/`
-- [ ] U186 `W4_SkinPractice` 練習關（`PracticeSign` 加 W4 題目）
+- [x] U186 `W4_SkinPractice` 練習關（`PracticeSign` 加 W4 題目）
+	  （驗證：`levels/_starts/W4_SkinPractice.tscn`）
+　　→ 講師決定：規格第 3 題「HUD 加一個金幣數字」範本本來就有，改成「HUD 加一個遊玩時間」（HudNumber source 選遊玩時間）；
+　　　第 2 題「血條換位置」改成「血條移到畫面右上角」（血量的 HudBar／HudIcons 中心在畫面右半、上半）
+　　→ 實作：W3_JuicePractice 的路線（Juice 清空、八塊告示牌同位置），題目換成 W4 的 8 題（`task` 8～15）；
+　　　只認學員自己的 UI（`custom_ui_*` 群組，預設範本不算），接法 A、B 都算；告示牌改成開場 0.3 秒後檢查（等 UISettings 接上的畫面排好）
 - [ ] U187 煙霧測試補上 W4 項目；README、零件手冊、速查表補 W4（含 §9 課堂 SOP、背景圖做法）；跑一次煙霧測試
 
 ## 之後再做（構想，還沒排進單元）
