@@ -197,6 +197,10 @@ const TIMELINE := "時間軸"
   ③ 像素大小＝`global_scale` 左右上下平均，同場景（`edited_scene_root`）的 `Skin`／`SkinAnimated` 取眾數（四捨五入到 0.25，一樣多取小的），差 2 倍以上才警告，至少 3 個皮才比；背景不比。
   「拉伸蓋滿」（`style_scale_free()`）不檢查②③也不算進眾數。每個皮都有 `ignore_style_check`。編輯器裡每秒重新檢查一次（拖 Scale、改 Filter 會更新），掃場景的結果快取半秒。
   講師的示範與測試場景（W4_SkinBox、`tests/skins/` 共 73 個皮）不會出現新的驚嘆號。
+- 瞇眼測試 `skins/SquintTest.tscn`（U192）：`CanvasLayer`（layer 110）＋全畫面 `ColorRect`＋shader（`hint_screen_texture` 9 點平均模糊，`style` 選「模糊＋黑白」再轉灰階；不靠 mipmap，GL Compatibility 可用）。
+  `key` F1／F2／Tab／G（預設 F1）、`strength` 模糊距離 1～4 像素；`process_mode = ALWAYS`、`mouse_filter = IGNORE`，只蓋畫面不影響遊戲。
+  選的鍵已經在 InputMap 裡被學員或組件用掉（`ui_` 開頭的不算）就讓給它並中文提醒（同 `PauseMenu._is_p_taken`）；
+  只在 `OS.has_feature("editor")` 時有效（講師決定），匯出的遊戲裡自己拿掉；多放的中文警告並拿掉。開著時左上角提示字不被模糊。
 - 統一色調 `skins/ColorGrade.tscn`（U191）：內建 `CanvasModulate`，`tone` 暖／冷／復古／夜晚 × `strength`（跟白色內插）。
   只染遊戲畫面（CanvasLayer 的 UI 不受影響），不用 shader；放兩個以上、放在 CanvasLayer 底下時黃色驚嘆號＋中文警告。
 - `font_size` 是下拉（U188，原本是拉桿），存的值還是 12／24／36／48，舊場景照樣讀得到。

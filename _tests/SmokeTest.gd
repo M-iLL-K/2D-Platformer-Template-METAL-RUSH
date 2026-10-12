@@ -140,6 +140,10 @@ func _run_all_steps() -> void:
 	# 16. 畫面風格檢查（只在編輯器出黃色驚嘆號，這裡直接用檢查的規則算）：糊的、非整數縮放的抓得到，正常的不誤報
 	await _test_style_check()
 
+	# 17. 瞇眼測試：開著的時候照常玩、暫停中開關、拔掉
+	await _test_squint()
+	await _assert_can_move("瞇眼測試")
+
 	if _failed:
 		print("SMOKE TEST FAILED")
 		get_tree().quit(1)
@@ -709,6 +713,25 @@ func _test_style_check() -> void:
 		_fail("風格檢查：像素大小的多數算錯")
 	scene.queue_free()
 	await _wait_frames(2)
+
+# 瞇眼測試開著時遊戲照常、暫停中也能開關，拔掉後不留東西
+func _test_squint() -> void:
+	var squint: Node = load("res://skins/SquintTest.tscn").instantiate()
+	add_child(squint)
+	await _wait_frames(2)
+	squint.set_on(true)
+	_player.take_damage(1.0)
+	await _wait_frames(5)
+	get_tree().paused = true
+	squint.set_on(false)
+	squint.set_on(true)
+	await _wait_frames(2)
+	get_tree().paused = false
+	if not squint.is_on():
+		_fail("瞇眼測試暫停中開關之後狀態不對")
+	squint.queue_free()
+	await _wait_frames(3)
+	Stats.add(Stats.HEALTH_KIND, 1)
 
 # 讓 HUD 顯示的數值變化一輪：扣血、補血、撿金幣，中間各等幾幀
 func _ui_value_round() -> void:
