@@ -780,7 +780,13 @@
 　　→ 講師決定：原本 32 格都是實心色票、關卡只用到 (3,1)，改成重新規劃＋自動接邊（Godot 內建 Terrain，「地面」「平台」兩種，只比四邊）：
 　　　地面 16 格（3×3 以 (3,1) 為中心，加柱子、橫條、單獨一格）、平台 4 格（單向碰撞，左端／中間／右端／單塊）、裝飾 12 格（沒有碰撞）；
 　　　(3,1) 像素不變，舊關卡看起來一樣。`blocks.png` 重畫成預設圖塊（平塗色＋邊線），另外附 `tile_template_guide.png`（放大 8 倍、中文標註）
-- [ ] U185 `W4_SkinBox` 起始場景（示範用的自訂 UI、皮、角色動畫）
+- [x] U185 `W4_SkinBox` 起始場景（示範用的自訂 UI、皮、角色動畫）
+	  （驗證：`levels/_starts/W4_SkinBox.tscn`）
+　　→ 講師決定：示範素材先接好，發給學員前講師換成自己畫的（`levels/_starts/_W4SkinBox/art/`，同檔名同尺寸直接覆蓋）。
+　　　現在暫用測試素材（Foxy、Pixel Adventure、tileset）的複製，愛心是幾何暫代圖。
+　　→ 實作：W3_JuiceBox 的路線與 Juice（拿掉咕嚕眼，角色圖自己有眼睛）；角色 AnimatedSprite2D＋`Juice_Animator`；
+　　　金幣、尖刺、終點套 `Skin`，敵人套 `SkinAnimated`（拉伸蓋滿）；HUD 直接拖進關卡（接法 B，愛心圖示＋金幣圖、糖果配色），
+　　　暫停選單（暗色）、過關畫面（復古綠）接在 `UISettings`（接法 A），場景放 `levels/_starts/_W4SkinBox/ui/`
 - [ ] U186 `W4_SkinPractice` 練習關（`PracticeSign` 加 W4 題目）
 - [ ] U187 煙霧測試補上 W4 項目；README、零件手冊、速查表補 W4（含 §9 課堂 SOP、背景圖做法）；跑一次煙霧測試
 
