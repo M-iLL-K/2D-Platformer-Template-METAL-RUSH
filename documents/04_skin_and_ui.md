@@ -191,6 +191,12 @@ const TIMELINE := "時間軸"
   形狀跟顏色分開：`style` 管形狀、`palette` 管顏色，任意組合；「預設」配色配像素復古以外的風格時用中性灰（`_NEUTRAL`），不然按鈕是 Godot 原本的樣子換不了形狀。
   底框（`Panel`／`PanelContainer`）用 `ui/styles/Panel_*.png` 灰階九宮格（24×24、四邊 8 像素），`StyleBoxTexture.modulate_color` 依配色的 panel 上色。
   三套都用 Cubic_11（講師決定，換非像素中文字型網頁版多好幾 MB）。圓角一律關抗鋸齒，維持像素風的硬邊。
+- 畫面風格檢查 `skins/_scripts/StyleCheck.gd`（U193）：`Skin`／`SkinAnimated`／`SkinBackground` 的 `_get_configuration_warnings()` 呼叫，只在編輯器出黃色驚嘆號、執行時不印。
+  ① `texture_filter` 不是 Inherit／Nearest（濾鏡在節點上，不在圖片匯入設定；不往上檢查父節點）；
+  ② `global_scale` 左右或上下跟最近整數差超過 0.05（含 0 倍以下）；
+  ③ 像素大小＝`global_scale` 左右上下平均，同場景（`edited_scene_root`）的 `Skin`／`SkinAnimated` 取眾數（四捨五入到 0.25，一樣多取小的），差 2 倍以上才警告，至少 3 個皮才比；背景不比。
+  「拉伸蓋滿」（`style_scale_free()`）不檢查②③也不算進眾數。每個皮都有 `ignore_style_check`。編輯器裡每秒重新檢查一次（拖 Scale、改 Filter 會更新），掃場景的結果快取半秒。
+  講師的示範與測試場景（W4_SkinBox、`tests/skins/` 共 73 個皮）不會出現新的驚嘆號。
 - 統一色調 `skins/ColorGrade.tscn`（U191）：內建 `CanvasModulate`，`tone` 暖／冷／復古／夜晚 × `strength`（跟白色內插）。
   只染遊戲畫面（CanvasLayer 的 UI 不受影響），不用 shader；放兩個以上、放在 CanvasLayer 底下時黃色驚嘆號＋中文警告。
 - `font_size` 是下拉（U188，原本是拉桿），存的值還是 12／24／36／48，舊場景照樣讀得到。

@@ -19,6 +19,11 @@ extends AnimatedSprite2D
 		_fit()
 ## 要不要跟著零件的方向轉（風扇吹的方向）；動畫請畫成朝上吹
 @export var follow_direction: bool = true
+## 不檢查畫面風格（圖會不會糊、縮放是不是整數倍、像素大小跟其他皮差太多）：故意混用不同風格的素材時勾起來
+@export var ignore_style_check: bool = false:
+	set(value):
+		ignore_style_check = value
+		update_configuration_warnings()
 
 const NORMAL := "平常"
 const ACTIVE := "啟動"
@@ -108,7 +113,12 @@ func _get_configuration_warnings() -> PackedStringArray:
 		var anim_problem := _anim_problem(SkinLink.is_enemy_host(host))
 		if anim_problem != "":
 			warnings.append(anim_problem)
+	warnings.append_array(StyleCheck.problems(self, true))
 	return warnings
+
+# 風格檢查用：拉伸蓋滿會自己縮放，不檢查縮放與像素大小
+func style_scale_free() -> bool:
+	return fill_style == FILL_STRETCH and SkinLink.block_visual(get_parent()) != null
 
 # 必要的動畫在不在：一般零件要有「平常」，敵人要有「走路」；能用回傳空字串
 func _anim_problem(is_enemy: bool) -> String:

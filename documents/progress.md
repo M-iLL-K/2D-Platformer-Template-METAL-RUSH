@@ -840,9 +840,13 @@
 　　→ 實作：內部 `Parallax2D`＋`Sprite2D`，`z_index = -100`；蓋滿的範圍是所有 Room 加起來（沒有 Room 看地形），編輯器每半秒重新對齊；
 　　　遠景要蓋的範圍是「關卡範圍 × depth＋一個畫面」（實測 4.7.2 的 `Parallax2D`：鏡頭移動 1000、scroll_scale 0.5 時背景在畫面上只移 500）；
 　　　沒放圖、放在別的東西底下、兩個不視差的蓋滿背景疊在一起時黃色驚嘆號＋中文警告。測試用講師的 `tests/skins/_art/Background/` 素材
-- [ ] U193 風格一致性警告：`Skin`／`SkinAnimated`／`SkinBackground` 濾鏡不是 Nearest、縮放不是整數倍、像素密度跟場景裡多數的差 2 倍以上
+- [x] U193 風格一致性警告：`Skin`／`SkinAnimated`／`SkinBackground` 濾鏡不是 Nearest、縮放不是整數倍、像素密度跟場景裡多數的差 2 倍以上
 	  （驗證：`tests/skins/StyleWarningTest.tscn`）
 　　→ 講師決定：只出黃色驚嘆號、不阻擋；附 `ignore_style_check` 勾選框讓刻意混用的人關掉
+　　→ 實作：共用工具 `StyleCheck`。「16px 角色配 64px 地板」本身不算（都是 1 倍，像素一樣大），只抓「一個像素在畫面上多大」不一樣：
+　　　像素大小＝縮放，跟同場景多數的皮差 2 倍以上才警告（3 個皮以上才比、拉伸蓋滿和背景不算）；拉伸蓋滿不檢查縮放。
+　　　圖片匯入的 mipmaps 不檢查：專案是 Nearest，沒用 mipmap 的濾鏡時 mipmaps 不影響畫面，改 Filter 的情況第①條就抓得到。
+　　　盤點現有 W4_SkinBox 與 `tests/skins/` 的 73 個皮：沒有新的驚嘆號
 - [ ] U192 `SquintTest`：瞇眼測試（按鍵切換灰階＋模糊，暫停中也能用）
 	  （驗證：`tests/ui/SquintTestDemo.tscn`）
 　　→ 講師決定：只在編輯器裡按 F5／F6 時有效，匯出的遊戲裡不作用

@@ -27,6 +27,11 @@ extends Node2D
 	set(value):
 		depth = value
 		_rebuild()
+## 不檢查畫面風格（圖會不會糊、縮放是不是整數倍）：故意用糊糊的背景時勾起來
+@export var ignore_style_check: bool = false:
+	set(value):
+		ignore_style_check = value
+		update_configuration_warnings()
 
 const FILL_ONE := 0
 const FILL_TILE := 1
@@ -62,7 +67,7 @@ func _ready() -> void:
 		printerr("⚠ [背景] %s：%s" % [name, problem])
 	_rebuild.call_deferred()
 
-# 編輯器裡每半秒重新對齊一次（Room 拉大拉小、地形畫多了，背景跟著變）
+# 編輯器裡每半秒重新對齊一次（Room 拉大拉小、地形畫多了，背景跟著變），順便重新檢查黃色驚嘆號
 func _process(delta: float) -> void:
 	_refit_timer += delta
 	if _refit_timer < _EDITOR_REFIT_SEC:
@@ -70,6 +75,7 @@ func _process(delta: float) -> void:
 	_refit_timer = 0.0
 	if _level_bounds() != _last_bounds:
 		_rebuild()
+	update_configuration_warnings()
 
 # 被拖到別的地方時重新檢查黃色驚嘆號
 func _notification(what: int) -> void:
@@ -81,9 +87,15 @@ func _validate_property(property: Dictionary) -> void:
 	if property.name == "depth" and not parallax:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 
-# 編輯器裡就看得到：沒放圖、放錯地方、跟別的背景疊在一起
+# 編輯器裡就看得到：沒放圖、放錯地方、跟別的背景疊在一起、圖會糊或縮放不是整數倍
 func _get_configuration_warnings() -> PackedStringArray:
-	return _get_problems()
+	var warnings := _get_problems()
+	warnings.append_array(StyleCheck.problems(self, false))
+	return warnings
+
+# 風格檢查用：拉伸蓋滿會自己縮放，不檢查縮放
+func style_scale_free() -> bool:
+	return fill_style == FILL_STRETCH
 
 # 現在的設定有什麼問題（中文），沒問題回傳空的
 func _get_problems() -> PackedStringArray:

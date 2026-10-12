@@ -137,6 +137,9 @@ func _run_all_steps() -> void:
 	await _test_background()
 	await _assert_can_move("背景測試")
 
+	# 16. 畫面風格檢查（只在編輯器出黃色驚嘆號，這裡直接用檢查的規則算）：糊的、非整數縮放的抓得到，正常的不誤報
+	await _test_style_check()
+
 	if _failed:
 		print("SMOKE TEST FAILED")
 		get_tree().quit(1)
@@ -685,6 +688,27 @@ func _test_background() -> void:
 	for bg in placed:
 		bg.queue_free()
 	await _wait_frames(3)
+
+# 用 StyleWarningTest 場景驗證風格檢查的規則：Filter、縮放、拉伸蓋滿不算
+func _test_style_check() -> void:
+	var scene: Node = load("res://tests/skins/StyleWarningTest.tscn").instantiate()
+	add_child(scene)
+	await _wait_frames(2)
+	var expect := {
+		"Coin_OK1/Skin": [false, false], "Coin_Linear/Skin": [true, false], "Coin_Scale1_5/Skin": [false, true],
+		"Coin_Tiny/Skin": [false, true], "Coin_Big2x/Skin": [false, false],
+	}
+	for path in expect:
+		var skin: Node2D = scene.get_node(path)
+		var got := [StyleCheck._filter_problem(skin) != "", StyleCheck._scale_problem(skin) != ""]
+		if got != expect[path]:
+			_fail("風格檢查 %s：Filter／縮放的結果是 %s，應該是 %s" % [path, got, expect[path]])
+	if not scene.get_node("Platform_Stretch/Skin").style_scale_free():
+		_fail("風格檢查：拉伸蓋滿的皮應該不檢查縮放")
+	if StyleCheck._most_common([1.0, 1.0, 1.0, 2.0, 0.25] as Array[float]) != 1.0:
+		_fail("風格檢查：像素大小的多數算錯")
+	scene.queue_free()
+	await _wait_frames(2)
 
 # 讓 HUD 顯示的數值變化一輪：扣血、補血、撿金幣，中間各等幾幀
 func _ui_value_round() -> void:

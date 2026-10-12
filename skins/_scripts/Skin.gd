@@ -31,6 +31,11 @@ extends Sprite2D
 @export var follow_facing: bool = true
 ## 要不要跟著零件的方向轉（風扇吹的方向）；圖請畫成朝上吹
 @export var follow_direction: bool = true
+## 不檢查畫面風格（圖會不會糊、縮放是不是整數倍、像素大小跟其他皮差太多）：故意混用不同風格的素材時勾起來
+@export var ignore_style_check: bool = false:
+	set(value):
+		ignore_style_check = value
+		update_configuration_warnings()
 
 const FILL_ONE := 0
 const FILL_TILE := 1
@@ -39,16 +44,21 @@ const FILL_STRETCH := 2
 var _shown: Texture2D = null  # 現在顯示的是哪一張（平常或狀態改變後）
 var _tile_textures := {}  # 從圖集切出來的圖要重複鋪滿時，先轉成單張圖（圖集直接重複會鋪到整張大圖）
 var _base_flip := false  # 編輯器裡 Flip H 有沒有勾（當作「朝右」的樣子）
+var _style_timer := 0.0
 
 # 顯示平常的圖；編輯器裡持續重畫外框（零件大小改了框跟著變）
 func _ready() -> void:
 	_show(texture_normal)
 	set_process(Engine.is_editor_hint())
 
-# 編輯器裡每一幀重畫外框，並跟著零件的大小、方向重新對齊
-func _process(_delta: float) -> void:
+# 編輯器裡每一幀重畫外框，並跟著零件的大小、方向重新對齊；每秒重新檢查黃色驚嘆號（縮放、Filter 改了要更新）
+func _process(delta: float) -> void:
 	queue_redraw()
 	_fit()
+	_style_timer += delta
+	if _style_timer >= 1.0:
+		_style_timer = 0.0
+		update_configuration_warnings()
 
 # 被拖到別的地方時重新檢查黃色驚嘆號、Inspector 要顯示哪些欄位
 func _notification(what: int) -> void:
@@ -81,7 +91,18 @@ func _get_configuration_warnings() -> PackedStringArray:
 		warnings.append(problem)
 	if texture_normal == null:
 		warnings.append("texture_normal 是空的：從檔案系統把圖片拖進來，不然遊戲中還是顯示原本的色塊")
+	warnings.append_array(StyleCheck.problems(self, true))
 	return warnings
+
+# 風格檢查用：拉伸蓋滿會自己縮放，不檢查縮放與像素大小
+func style_scale_free() -> bool:
+	return fill_style == FILL_STRETCH and SkinLink.block_visual(get_parent()) != null
+
+# 風格檢查用：縮放不是整數倍時的補充建議（在零件底下才有 fill_style 可以選）
+func style_fill_hint() -> String:
+	if SkinLink.block_visual(get_parent()) == null:
+		return ""
+	return "（要蓋住整個零件就把 fill_style 改成「重複鋪滿」）"
 
 # 換成顯示 tex，依 fill_style 準備重複鋪滿用的圖，再對齊零件
 func _show(tex: Texture2D) -> void:
