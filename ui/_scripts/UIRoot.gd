@@ -34,6 +34,9 @@ const KIND_CLEAR_SCREEN := 2
 
 const PALETTE_DEFAULT := 0
 
+# 「預設」配色的選單底框：深色半透明，蓋在遊戲畫面上也看得清楚字
+const _DEFAULT_PANEL := Color(0.06, 0.06, 0.09, 0.85)
+
 const NO_CLEAR_SCREEN := "關卡裡沒有 ClearScreen，過關時這個過關畫面不會出現：把 blocks/ClearScreen.tscn 拖進關卡"
 const _CLEAR_SCREEN_SCRIPT := "res://blocks/_scripts/ClearScreen.gd"
 
@@ -153,6 +156,7 @@ func _apply_theme() -> void:
 	var colors: Dictionary = _PALETTES[palette]
 	if not colors.is_empty():
 		_add_palette(t, colors)
+	_add_panel(t, colors)
 	_add_variations(t, colors)
 	theme = t
 	_notify_children(self)
@@ -175,8 +179,16 @@ func _add_palette(t: Theme, c: Dictionary) -> void:
 	t.set_stylebox("slider", "HSlider", _box(c.back, 2))
 	t.set_stylebox("grabber_area", "HSlider", _box(c.accent, 2))
 	t.set_stylebox("grabber_area_highlight", "HSlider", _box(c.accent, 2))
-	t.set_stylebox("panel", "Panel", _box(c.panel))
-	t.set_stylebox("panel", "PanelContainer", _box(c.panel))
+
+# 選單的底框（Panel、PanelContainer）：跟著配色換顏色，「預設」配色用深色半透明；四周留白讓字不貼邊
+func _add_panel(t: Theme, c: Dictionary) -> void:
+	var box := _box(c.get("panel", _DEFAULT_PANEL))
+	box.content_margin_left = 12
+	box.content_margin_right = 12
+	box.content_margin_top = 8
+	box.content_margin_bottom = 8
+	t.set_stylebox("panel", "Panel", box)
+	t.set_stylebox("panel", "PanelContainer", box)
 
 # 範本用的兩種字：標題（TitleLabel，兩倍大）、提示（HintLabel，次要的顏色）；
 # 在 Label 的 Theme Type Variation 選它們，換配色、字的大小時跟著變

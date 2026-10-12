@@ -808,7 +808,7 @@
 　　→ 盤點：貼圖 Nearest（`default_texture_filter=0`）、整數縮放（`window/stretch/scale_mode="integer"`）本來就設好了；
 　　　`Cubic_11.woff2` 400 KB、9159 個漢字、自由授權，不用子集化
 　　→ 講師決定：抽卡場景（`CardDraw`、`RuleCardDraw`）不是 12 倍數的字級，有必要就改成 12 的倍數
-- [ ] U188b 暫停選單、過關畫面範本加底框：`Center/List` 外面包一層 `PanelContainer`，底色跟著 `palette`；「預設」配色補深色半透明面板色；
+- [x] U188b 暫停選單、過關畫面範本加底框：`Center/List` 外面包一層 `PanelContainer`，底色跟著 `palette`；「預設」配色補深色半透明面板色；
 	  `W4_SkinBox` 的示範暫停選單、過關畫面一起改（驗證：`tests/ui/PauseMenuTemplateTest.tscn`、`tests/ui/ClearScreenTemplateTest.tscn`）
 　　→ 講師決定（U188 時提出）：選單沒有自己的底框，遊戲畫面花的時候看不清楚；暫停選單、過關畫面都加。學員已經再製出去的不會跟著改
 - [ ] U189 `TitleScreenTemplate`：標題畫面（獨立場景、設為主場景）；`MenuAction` 加「開始遊戲」（下拉選關卡）、「回標題」（回主場景）；
