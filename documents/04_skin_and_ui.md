@@ -163,7 +163,7 @@ const TIMELINE := "時間軸"
 
 | 零件 | 繼承 | 做什麼 |
 |---|---|---|
-| `MenuAction` | `Button` | `action` 下拉：繼續遊戲／整關重來／離開遊戲（跟現在暫停選單同三個）。按下去就執行，不用連 `pressed`。「離開遊戲」在 Web 版自動藏起來 |
+| `MenuAction` | `Button` | `action` 下拉：繼續遊戲／整關重來／離開遊戲／開始遊戲／回標題（後兩個 U189）。按下去就執行，不用連 `pressed`。「離開遊戲」在 Web 版自動藏起來；「回標題」在主場景不是標題畫面、或現在就在標題上時自動藏起來；「開始遊戲」多一格 `level` 下拉（掃 `_my/`、`levels/_starts/` 的關卡，排除最上層是 `UIRoot` 的場景；存去掉 `res://` 的路徑，另外記 UID，改名搬家還找得到；沒選、找不到時黃色驚嘆號＋中文警告） |
 | `VolumeSlider` | `HSlider` | `bus` 下拉：主音量／音效／音樂。跟現在暫停選單的拉桿同一套存檔（`user://settings.cfg`） |
 | `ClearStat` | `Label` | 過關畫面專用：`stat` 下拉：用了幾秒／死了幾次／製作者的話。照 `ClearScreen` 的勾選決定要不要顯示 |
 
@@ -203,7 +203,10 @@ const TIMELINE := "時間軸"
 |---|---|---|
 | `HudTemplate.tscn` | HUD | 左上角血條（`HudBar` 血量）＋金幣（`HudNumber`） |
 | `PauseMenuTemplate.tscn` | 暫停選單 | 半透明底、標題、三條 `VolumeSlider`、`MenuAction` 繼續遊戲／整關重來／離開遊戲、「Esc／P 繼續」提示 |
-| `ClearScreenTemplate.tscn` | 過關畫面 | 「過關！」、`ClearStat` 時間／死亡次數／製作者的話、「按 R 再玩一次」提示 |
+| `ClearScreenTemplate.tscn` | 過關畫面 | 「過關！」、`ClearStat` 時間／死亡次數／製作者的話、`MenuAction` 回標題、「按 R 再玩一次」提示 |
+| `TitleScreenTemplate.tscn` | 標題畫面 | 上中下 1：2：1.4，上遊戲名（`GameName`）、中主視覺（`KeyArt`）、下「開始遊戲」「離開遊戲」＋一行小字（`Hook`） |
+| `TitleScreenTemplate_Center.tscn` | 標題畫面 | 暗色；主視覺鋪滿當背景，遊戲名在上，按鈕和小字在置中的底框裡 |
+| `TitleScreenTemplate_Side.tscn` | 標題畫面 | 復古綠；左邊遊戲名、小字、按鈕，右邊主視覺 |
 
 - 預設 HUD 範本只放血量（`HudNumber` 只有名字＋`HudBar`）和金幣（色塊＋`HudNumber`）；其他數值（鑰匙、學員自訂的數值）
   照現在的規則，第一次用到時由預設 HUD 自動加一列「色塊＋`HudNumber`」。每一列照原本的規則出現（`show_in_hud` 打勾或被用到過），
@@ -213,6 +216,11 @@ const TIMELINE := "時間軸"
   `UIRoot` 不算學員的自訂畫面。
 - 認領在零件真的離開場景時才放掉；只是換位置（`UIRoot` 自己移進 CanvasLayer）不算。
 - 按鍵（暫停的 Esc／P、過關的 R）由系統處理，不靠學員的按鈕，所以學員把按鈕全刪掉也不會卡死在畫面裡。
+- 標題畫面（U189）自己就是一個場景、設為主場景，不參加接法 A／B：拖進關卡會中文警告並自己拿掉，拖進 `UISettings` 的欄位會黃色驚嘆號、改用預設。
+  `UIRoot` 的 `game_name`、`key_art`、`hook` 只在標題畫面顯示，照節點名稱套到範本裡的 `GameName`、`KeyArt`、`Hook`，空白就不動；
+  欄位有填但節點被刪掉時黃色驚嘆號。換場景由 `PauseMenu.change_scene()` 處理：關掉選單、解除暫停、`Engine.time_scale = 1`，
+  先拿掉舊場景，再把 `Stats`、`HudData`、`RespawnMemory`、`StatsHud` 歸零，最後放進新場景（新場景的 `ValueSettings` 才套得上）。
+  標題畫面上 Esc 不開暫停選單。`ConnectionValidator` 換場景後也檢查新場景。
 - 暫停選單、過關畫面的內容放在底框 `Center/Panel`（`PanelContainer`）裡（U188b）：底色跟著 `palette`，「預設」配色是深色半透明，
   遊戲畫面花的時候字也看得清楚。學員之前已經再製出去的場景不會跟著改。
 - 暫停、過關畫面的「暫停中也要能動」（`process_mode = ALWAYS`）由 `UIRoot` 自己設好，學員不用管。

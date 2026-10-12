@@ -815,12 +815,17 @@
 	  （驗證：`tests/juice/_extra/Juice_TextPopupTest.tscn`、`levels/Showroom.tscn`）
 　　→ 講師決定（U188 時提出）：跳字預設 11、拉桿 8～32，關掉抗鋸齒後不是 12 倍數會筆畫粗細不一，改成跟 `UIRoot.font_size` 一樣的下拉。
 　　　展示間的標籤框只有 80 寬、間隔 96，改 24 會互相重疊，所以改 12
-- [ ] U189 `TitleScreenTemplate`：標題畫面（獨立場景、設為主場景）；`MenuAction` 加「開始遊戲」（下拉選關卡）、「回標題」（回主場景）；
+- [x] U189 `TitleScreenTemplate`：標題畫面（獨立場景、設為主場景）；`MenuAction` 加「開始遊戲」（下拉選關卡）、「回標題」（回主場景）；
 	  換場景前自動載入的狀態歸零；暫停選單、過關畫面範本加「回標題」；外觀變體 2 個
 	  （驗證：`tests/ui/TitleScreenTemplateTest.tscn`、`tests/ui/TitleFlowTest.tscn`）
 　　→ 講師決定：標題是獨立場景，按開始換場景進關卡，讓學員練習換場景。CLAUDE.md 開例外：重生、整關重來仍不准換場景，
 　　　只有 `MenuAction` 的「開始遊戲」「回標題」可以。標題不進 `UISettings`（接法 A／B 只管 HUD、暫停選單、過關畫面）
 　　→ 講師決定：遊戲名稱、主視覺、Hook 字「欄位與直接改範本都做」：根節點欄位有填就蓋掉範本裡的，空白就保留範本原本的
+　　→ 實作：`UIRoot.kind` 加「標題畫面」；`MenuAction` 加「開始遊戲」（`level` 下拉掃 `_my/`、`levels/_starts/`，記 UID 防改名）、「回標題」（回主場景，
+　　　沒有標題畫面可回時藏起來）；換場景統一走 `PauseMenu.change_scene()`：先拿掉舊場景，再歸零 `Stats`（數值種類與設定，血量回 3／3）、
+　　　`HudData`（來源、遊玩時間、死亡次數）、`RespawnMemory`、`StatsHud`（預設 HUD、角落容器），最後放進新場景；`JuiceSwitch` 的開關、音量不歸零（是玩家的偏好）。
+　　　標題放進關卡會中文警告並自己拿掉、拖進 `UISettings` 黃色驚嘆號；標題上 Esc 不開暫停選單；`ConnectionValidator` 換場景後也檢查新場景。
+　　　暫停選單、過關畫面範本（含 W4_SkinBox 示範版）加「回標題」；範本三個（預設、`_Center` 暗色主視覺當背景、`_Side` 復古綠左文右圖），主視覺佔位圖 `ui/templates/_art/`
 - [ ] U191 `UIRoot` 加 `style`（像素復古／乾淨極簡／可愛圓角，含九宮格面板）；`ColorGrade`（統一色調，`CanvasModulate`）
 	  （驗證：`tests/ui/StylePresetTest.tscn`、`tests/ui/ColorGradeTest.tscn`）
 　　→ 講師決定：三套風格都用 Cubic 11（換非像素中文字型網頁版要多好幾 MB）

@@ -125,6 +125,10 @@ func _run_all_steps() -> void:
 	# 12. 像素專案預設值：貼圖 Nearest、整數縮放、像素字不抗鋸齒（設定被改掉的話字和圖會糊）
 	_test_pixel_defaults()
 
+	# 13. 標題畫面：三個範本都是標題、關卡清單掃得到而且沒混進畫面、放進關卡會自己拿掉、換場景用的歸零（不真的換場景）
+	await _test_title_screen()
+	await _assert_can_move("標題畫面測試")
+
 	if _failed:
 		print("SMOKE TEST FAILED")
 		get_tree().quit(1)
@@ -590,6 +594,34 @@ func _test_pixel_defaults() -> void:
 	for line in checker.check_settings():
 		if line.begins_with("✗"):
 			_fail("像素預設值：%s" % line)
+
+# 標題畫面的範本、「開始遊戲」的關卡清單、標題放錯地方、換場景前的歸零
+func _test_title_screen() -> void:
+	for p in ["res://ui/templates/TitleScreenTemplate.tscn", "res://ui/templates/TitleScreenTemplate_Center.tscn",
+			"res://ui/templates/TitleScreenTemplate_Side.tscn"]:
+		if UIRoot.scene_root_kind(load(p)) != UIRoot.KIND_TITLE:
+			_fail("%s 不是標題畫面" % p)
+		var title: Node = (load(p) as PackedScene).instantiate()
+		add_child(title)
+		await _wait_frames(2)
+		if is_instance_valid(title):
+			_fail("%s 放進別的場景沒有自己拿掉" % p)
+	var menu_action: Script = load("res://ui/_scripts/MenuAction.gd")
+	var levels: PackedStringArray = menu_action.find_levels()
+	if levels.is_empty():
+		_fail("「開始遊戲」的關卡清單是空的")
+	for level in levels:
+		if UIRoot.scene_root_kind(load("res://" + level)) != -1:
+			_fail("「開始遊戲」的關卡清單混進了 UI 畫面：%s" % level)
+	Stats.add("金幣", 5)
+	Stats.reset_for_new_scene()
+	HudData.reset_for_new_scene()
+	StatsHud.reset_for_new_scene()
+	await _wait_frames(2)
+	if Stats.get_value("金幣") != 0 or HudData.has_source("金幣") or HudData.get_value(HudData.PLAY_TIME) > 0.5:
+		_fail("換場景前的歸零沒有清乾淨")
+	if Stats.get_value(Stats.HEALTH_KIND) != 3:
+		_fail("換場景前的歸零之後血量不是 3")
 
 # 讓 HUD 顯示的數值變化一輪：扣血、補血、撿金幣，中間各等幾幀
 func _ui_value_round() -> void:

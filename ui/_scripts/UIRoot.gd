@@ -2,16 +2,18 @@
 extends Control
 class_name UIRoot
 
-# 一整套 UI（HUD、暫停選單、過關畫面）的根節點：範本場景的最上層就是它。
+# 一整套 UI（HUD、暫停選單、過關畫面、標題畫面）的根節點：範本場景的最上層就是它。
 # 依欄位建一份 Theme 套在自己身上，底下所有零件的字型、字的大小、配色自動跟著變，學員不用碰 Theme 編輯器。
 # 編輯器裡改欄位馬上看得到。遊戲開始時如果不在 CanvasLayer 底下（例如直接拖進關卡），會自己移進一個，
 # 才會固定在畫面上、不跟著鏡頭跑。暫停選單、過關畫面在遊戲暫停時也照樣能動。
+# 標題畫面自己就是一個場景（設為主場景），不放進關卡；遊戲名稱、主視覺、一行小字可以填欄位，也可以直接改範本裡的字和圖。
 
 ## 這是哪一種畫面（範本已經選好，不用改）
-@export_enum("HUD", "暫停選單", "過關畫面") var kind: int = KIND_HUD:
+@export_enum("HUD", "暫停選單", "過關畫面", "標題畫面") var kind: int = KIND_HUD:
 	set(value):
 		kind = value
 		_apply_process_mode()
+		notify_property_list_changed()
 ## 這一整套 UI 用的字型，從檔案系統把字型檔拖進來；空白用專案預設的像素字
 @export var font: Font:
 	set(value):
@@ -28,9 +30,27 @@ class_name UIRoot
 		palette = value
 		_apply_theme()
 
+@export_group("標題畫面")
+## 遊戲名稱（這一格可以打字）：填了就蓋掉範本裡 GameName 的字；空白就用範本裡原本的字
+@export var game_name: String = "":
+	set(value):
+		game_name = value
+		_apply_title()
+## 主視覺：從檔案系統把圖片拖進來，填了就換掉範本裡 KeyArt 的圖；空白就用範本裡原本的圖
+@export var key_art: Texture2D:
+	set(value):
+		key_art = value
+		_apply_title()
+## 一行小字，例如「跳過 100 根尖刺，你做得到嗎？」（這一格可以打字）：填了就蓋掉範本裡 Hook 的字；空白就用範本裡原本的字
+@export var hook: String = "":
+	set(value):
+		hook = value
+		_apply_title()
+
 const KIND_HUD := 0
 const KIND_PAUSE_MENU := 1
 const KIND_CLEAR_SCREEN := 2
+const KIND_TITLE := 3
 
 const PALETTE_DEFAULT := 0
 
@@ -41,8 +61,12 @@ const NO_CLEAR_SCREEN := "關卡裡沒有 ClearScreen，過關時這個過關畫
 const _CLEAR_SCREEN_SCRIPT := "res://blocks/_scripts/ClearScreen.gd"
 
 # 每一種畫面放在哪一層：數字越大蓋在越上面（跟原本的預設 UI 一樣）
-const _LAYERS := [1, 20, 10]
-const _KIND_NAMES := ["HUD", "暫停選單", "過關畫面"]
+const _LAYERS := [1, 20, 10, 30]
+const _KIND_NAMES := ["HUD", "暫停選單", "過關畫面", "標題畫面"]
+const _SCRIPT_PATH := "res://ui/_scripts/UIRoot.gd"
+# 標題畫面的欄位 -> 範本裡對應的節點名稱
+const _TITLE_NODES := { "game_name": "GameName", "key_art": "KeyArt", "hook": "Hook" }
+const TITLE_NOT_ALONE := "標題畫面要自己一個場景（設為主場景），不能放進關卡；從 ui/templates/ 再製一份到 _my/，右鍵「設為主場景」"
 
 # 每套配色的顏色：text 字、dim 次要的字、panel 底色、button 按鈕、hover 滑過、pressed 按下、accent 條和拉桿、back 條的底
 const _PALETTES := [
@@ -63,11 +87,15 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_apply_process_mode()
 	_apply_theme()
+	_apply_title()
 	if Engine.is_editor_hint():
+		return
+	_snap_containers(self)
+	if kind == KIND_TITLE:
+		_ready_title()
 		return
 	if kind != KIND_HUD:
 		visible = false
-	_snap_containers(self)
 	if not get_meta(HudBinding.DEFAULT_META, false):
 		var group := "custom_ui_%d" % kind
 		var first := get_tree().get_first_node_in_group(group)
@@ -83,10 +111,22 @@ func _ready() -> void:
 	if not get_parent() is CanvasLayer:
 		_move_to_layer.call_deferred()
 
-# theme 由欄位自動產生：不存進場景檔、Inspector 也不顯示，學員改字型配色用上面的欄位
+# 標題畫面：自己是場景最上層才用；被放進關卡的話警告並拿掉（不然會蓋住整個遊戲）
+func _ready_title() -> void:
+	if get_parent() == get_tree().root:
+		_focus_first_button.call_deferred(self)
+		return
+	push_warning("[%s] %s" % [name, TITLE_NOT_ALONE])
+	printerr("⚠ [%s] %s" % [name, TITLE_NOT_ALONE])
+	queue_free()
+
+# theme 由欄位自動產生：不存進場景檔、Inspector 也不顯示，學員改字型配色用上面的欄位；
+# 標題畫面的欄位只在標題畫面顯示
 func _validate_property(property: Dictionary) -> void:
 	if property.name == "theme":
 		property.usage = PROPERTY_USAGE_NONE
+	elif _TITLE_NODES.has(property.name) and kind != KIND_TITLE:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
 
 # 這套 UI 放進關卡時（不是單獨編輯它的時候），把底下顯示零件的設定錯誤收集起來顯示在這裡：
 # 放進關卡的場景看不到裡面的子節點，錯誤要掛在看得到的這一層
@@ -95,6 +135,12 @@ func _get_configuration_warnings() -> PackedStringArray:
 	if not is_inside_tree():
 		return warnings
 	var scene_root := get_tree().edited_scene_root
+	if kind == KIND_TITLE:
+		if scene_root != null and scene_root != self:
+			warnings.append(TITLE_NOT_ALONE)
+		else:
+			warnings.append_array(_title_warnings())
+		return warnings
 	if scene_root == null or scene_root == self:
 		return warnings
 	var first := _first_of_kind(scene_root)
@@ -104,6 +150,68 @@ func _get_configuration_warnings() -> PackedStringArray:
 		warnings.append(NO_CLEAR_SCREEN)
 	_collect_warnings(self, scene_root, warnings)
 	return warnings
+
+# 往下找第一個看得到的按鈕先選起來，鍵盤（Enter、空白鍵）可以直接按；找到就停
+func _focus_first_button(node: Node) -> bool:
+	for child in node.get_children():
+		if child is BaseButton and (child as Control).is_visible_in_tree():
+			(child as Control).grab_focus()
+			return true
+		if _focus_first_button(child):
+			return true
+	return false
+
+# 標題畫面的欄位填了，範本裡卻找不到對應的節點（被刪掉或改名）時的警告
+func _title_warnings() -> PackedStringArray:
+	var warnings := PackedStringArray()
+	for field in _TITLE_NODES:
+		var value = get(field)
+		var filled: bool = value != null and not (value is String and (value as String).strip_edges() == "")
+		if filled and _title_node(field) == null:
+			warnings.append("%s：範本裡的 %s 被刪掉或改名了，這一欄不會顯示" % [field, _TITLE_NODES[field]])
+	return warnings
+
+# 範本裡標題畫面某個欄位對應的節點（照名稱往下找），找不到回傳 null
+func _title_node(field: String) -> Node:
+	return find_child(_TITLE_NODES[field], true, false)
+
+# 把標題畫面的欄位套到範本裡的字和圖：有填的才蓋掉，空白的不動
+func _apply_title() -> void:
+	if kind != KIND_TITLE or not is_inside_tree():
+		return
+	var name_label := _title_node("game_name") as Label
+	if name_label != null and game_name.strip_edges() != "":
+		name_label.text = game_name.strip_edges()
+	var art := _title_node("key_art") as TextureRect
+	if art != null and key_art != null:
+		art.texture = key_art
+	var hook_label := _title_node("hook") as Label
+	if hook_label != null and hook.strip_edges() != "":
+		hook_label.text = hook.strip_edges()
+	update_configuration_warnings()
+
+# 場景檔最上層是哪一種 UIRoot（只看場景檔，不生出來）；最上層不是 UIRoot 回傳 -1。
+# 最上層是另一個場景的實例（繼承的場景）時，往那個場景找腳本
+static func scene_root_kind(packed: PackedScene) -> int:
+	var state := packed.get_state()
+	var found_kind := -1
+	var is_root := false
+	for i in state.get_node_property_count(0):
+		var prop := state.get_node_property_name(0, i)
+		var value = state.get_node_property_value(0, i)
+		if prop == &"script" and value is Script:
+			is_root = (value as Script).resource_path == _SCRIPT_PATH
+		elif prop == &"kind":
+			found_kind = int(value)
+	var base := state.get_node_instance(0)
+	if not is_root and base != null:
+		var base_kind := scene_root_kind(base)
+		if base_kind == -1:
+			return -1
+		return found_kind if found_kind != -1 else base_kind
+	if not is_root:
+		return -1
+	return found_kind if found_kind != -1 else KIND_HUD
 
 # 關卡裡有沒有 ClearScreen（過關的流程靠它，自訂過關畫面只管長相）
 static func has_clear_screen(scene_root: Node) -> bool:
