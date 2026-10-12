@@ -63,6 +63,36 @@
 **按鍵手感**（不是 Juice，在 **Player** 的 Inspector「按鍵手感」）：晚一點按也能跳、早一點按也能跳、短按小跳、頂頭修正、起跑加速，
 每一項都可以勾選開關。想感受差別：全部取消勾選玩一次，再全部勾回來玩一次。
 
+### 3.2 W4：套皮與 UI
+
+1. **先看換完長什麼樣子**：打開 `levels/_starts/W4_SkinBox.tscn` → 按 **F6**（HUD、暫停選單、過關畫面、零件、角色都換過了）
+2. 回到自己的關卡（W4 才加入的話，把 `W4_SkinBox` 或 `W3_JuiceBox` 另存到 `_my/`）
+3. 自己的圖片、字型都放在 `_my/` 底下（例如 `_my/art/`）
+
+**換零件外觀**：在關卡裡點選零件（終點、門、敵人、金幣…）→ 從 `skins/` 拖 `Skin` 進去當它的子節點 → 把圖拖進 `texture_normal`。
+- 黃色虛線框是原本色塊的範圍，碰撞不會跟著圖變，圖要畫在框裡（可以直接拖動 `Skin` 對位置）
+- 狀態改變後的樣子（門打開、按鈕亮起、終點踩到…）拖進 `texture_active`；沒放就用平常的圖變色
+- 要動畫：拖 `SkinAnimated`，在 Sprite Frames 做「平常」（敵人做「走路」），想要狀態改變後的動畫就加「啟動」
+
+**換 HUD**：`ui/templates/HudTemplate.tscn` 按右鍵 **再製**（Duplicate）→ 存到 `_my/` → 打開改（拖位置、換圖、加零件選數值）→ 把它拖進關卡。
+**換暫停選單／過關畫面**：`PauseMenuTemplate`、`ClearScreenTemplate` 一樣再製到 `_my/` 改好，拖進關卡裡 `UISettings` 的欄位
+（關卡沒有 `UISettings` 的話從 `blocks/` 拖一個）。整套字型、配色：點畫面最上層，改 `font`、`font_size`、`palette`。
+
+**換角色**：Player → Visual 底下的 `Sprite2D` 換成 `AnimatedSprite2D`，在 Sprite Frames 做「待機」「跑步」「跳起」「落下」
+（還可以做「受傷」「死亡」「攻擊」）→ 從 `juice/` 拖 `Juice_Animator` 到 **Player → Juice**。圖朝左畫的，在 `AnimatedSprite2D` 勾 **Flip H**。
+
+**換地形**：`art/default_tile.tres` 右鍵再製到 `_my/` → 照 `art/tile_template.png` 的格子畫自己的圖（每格 16×16，
+放大版說明看 `art/tile_template_guide.png`）→ 點再製的圖塊集，把圖拖進去取代原本的圖片 → 關卡的 `TileMapLayer` 換成自己的圖塊集。
+畫地形時在圖塊面板選「地形」（Terrains）分頁，選「地面」或「平台」用筆刷刷，邊會自動接好。
+
+**背景圖**：在關卡加一個 `Sprite2D`（整張背景）或 `Parallax2D`（會跟鏡頭慢慢動的遠景，底下再放 `Sprite2D`），把圖拖進 Texture，
+在場景樹拖到最上面（最先畫），就會在所有東西後面。
+
+每個零件有哪些設定 → `零件手冊.md` §7；動畫名稱 → `速查表.md` §6。
+
+**練習關**：打開 `levels/_starts/W4_SkinPractice.tscn` → **場景 → 另存場景為** 存到 `_my/` → 照天上 8 塊告示牌的題目做 →
+按 **F6**，做對的告示牌會變綠色。
+
 ---
 
 ## 4. 建立自己的關卡
@@ -177,6 +207,11 @@
 | 沒有聲音 | 按 **Esc** 打開暫停選單，看主音量／音效／音樂是不是被拉到 0 |
 | 背景音樂沒播 | `Juice_BGM` 的 `music` 是空的（場景樹上有黃色驚嘆號），或兩個都勾了 `play_on_start`（只會播第一個） |
 | 鏡頭不會跟著換房間 | 關卡裡沒有 `Room`，或兩個 Room 之間留了縫，對照第 5.1 節 |
+| 套了皮還是顯示色塊 | `Skin` 的 `texture_normal` 沒放圖，或 `SkinAnimated` 缺「平常」（敵人缺「走路」）動畫；名稱要一字不差，看場景樹上的黃色驚嘆號 |
+| 角色不會動、不會轉身 | 沒有拖 `Juice_Animator` 到 Player → Juice，或缺「待機」動畫；也可能按過 **0** 把 Juice 關掉了 |
+| 角色倒著跑 | 圖是朝左畫的：在 Visual 底下的 `AnimatedSprite2D` 勾 **Flip H**（敵人的皮也一樣） |
+| 自己的 HUD 沒出現 | HUD 要拖進關卡（或放進 `UISettings` 的 `hud_scene`）；同一種畫面只能放一個 |
+| 地形邊緣接不起來 | 用的是一般筆刷，改到圖塊面板的「地形」分頁選「地面」再刷 |
 | 改完沒變化 | 忘了存檔（**Ctrl+S**）再按 F6 |
 | 「設為主場景」按了沒反應 | 這份關卡是用檔案總管複製來的。在 Godot 打開它 → **場景 → 另存場景為** 存一份新名字，對新的那份設主場景，確認沒問題再刪舊的 |
 | 更新後輸出面板一堆 `invalid UID … using text path instead` | 不影響遊玩，打開自己的關卡存一次就會消失 |

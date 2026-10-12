@@ -158,6 +158,12 @@ func _update_die(delta: float) -> void:
 		_sprite.frame = _sprite.sprite_frames.get_frame_count(DIE) - 1
 		_sprite.pause()
 
+# 拔掉組件時把角色圖翻回原本的方向，再交給基底拔掉事件
+func _exit_tree() -> void:
+	if not Engine.is_editor_hint():
+		_set_flip(false)
+	super()
+
 # 依朝向翻面：自動奔跑卡用 Visual 左右翻的時候，已經翻過了就不再翻一次
 func _update_flip() -> void:
 	if not follow_facing:

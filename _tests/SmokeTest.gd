@@ -1,7 +1,7 @@
 extends Node
 
 # 自動化煙霧測試。規格見 documents/00_foundation.md 第 7 節。
-# 掃 mechanics/ 與 juice/ 資料夾，不需要手動維護清單。
+# 掃 mechanics/ 與 juice/ 資料夾，不需要手動維護清單；W4 另外掃 blocks/（套皮）與 UI 範本。
 
 const PLAYER_SCENE := preload("res://player/Player.tscn")
 
@@ -109,6 +109,18 @@ func _run_all_steps() -> void:
 	# 8. 按鍵手感全開（含起跑加速），跟二段跳、蹬牆跳、蓄力青蛙跳、黏黏身體一起掛，亂按跳躍、左右跑
 	await _test_input_feel()
 	await _assert_can_move("按鍵手感測試")
+
+	# 9. W4：角色換成 AnimatedSprite2D＋Juice_Animator，跑、跳、受傷、攻擊、死亡重生、總開關，拔掉後外觀與翻面還原
+	await _test_animator()
+	await _assert_can_move("角色動畫測試")
+
+	# 10. W4：blocks/ 裡每個有色塊的零件輪流套 Skin／SkinAnimated，開關、打、重置一輪
+	await _test_skins()
+	await _assert_can_move("零件套皮測試")
+
+	# 11. W4：三個 UI 範本跟 W4_SkinBox 的示範 UI 都接上去（直接放進場景、也放進 UISettings），數值變化一輪
+	await _test_ui_templates()
+	await _assert_can_move("UI 範本測試")
 
 	if _failed:
 		print("SMOKE TEST FAILED")
@@ -444,3 +456,137 @@ func _assert_can_move(stage_name: String) -> void:
 	Input.action_release("move_right")
 	if is_equal_approx(_player.position.x, start_x):
 		_fail("「%s」階段後，拔除組件時 Player 無法移動" % stage_name)
+
+# 做一份 SpriteFrames：names 裡每段動畫兩格白色方塊（角色動畫、套皮測試用）
+func _make_frames(names: Array) -> SpriteFrames:
+	var frames := SpriteFrames.new()
+	var tex: Texture2D = preload("res://art/white_block.png")
+	for anim in names:
+		frames.add_animation(anim)
+		frames.set_animation_loop(anim, anim in ["待機", "跑步", "跳起", "落下", "平常", "啟動", "走路"])
+		for k in 2:
+			frames.add_frame(anim, tex)
+	if frames.has_animation("default"):
+		frames.remove_animation("default")
+	return frames
+
+# 角色換成 AnimatedSprite2D（八段動畫都有）＋Juice_Animator：跑、跳、受傷、攻擊、死亡重生、總開關切換，
+# 最後拔掉，原本那張圖的翻面要回到原本的樣子
+func _test_animator() -> void:
+	var sprite: Sprite2D = _player.visual.get_node("Sprite2D")
+	var flip_before := sprite.flip_h
+	var anim_sprite := AnimatedSprite2D.new()
+	anim_sprite.name = "SmokeAnimated"
+	anim_sprite.sprite_frames = _make_frames(["待機", "跑步", "跳起", "落下", "受傷", "死亡", "攻擊", "特殊"])
+	_player.visual.add_child(anim_sprite)
+	var animator: Node = load("res://juice/Juice_Animator.tscn").instantiate()
+	_juice_container.add_child(animator)
+	await _wait_frames(5)
+	for i in 5:
+		Input.action_press("move_left" if i % 2 == 0 else "move_right")
+		await _wait_frames(10)
+		_player.force_jump()
+		await _wait_frames(10)
+		Input.action_release("move_left")
+		Input.action_release("move_right")
+		_player.take_damage(1.0)
+		animator.play_custom()
+		await _wait_frames(5)
+		_player.kill()
+		await _wait_frames(5)
+		_player.revive(Vector2(0, 150))
+		JuiceSwitch.set_on(i % 2 == 1)
+		await _wait_frames(5)
+	JuiceSwitch.set_on(true)
+	if not is_instance_valid(_player):
+		_fail("角色動畫測試時 Player 消失了")
+		return
+	animator.queue_free()
+	await _wait_frames(2)
+	if sprite.flip_h != flip_before:
+		_fail("拔掉 Juice_Animator 之後，角色圖的翻面沒有還原")
+	anim_sprite.queue_free()
+	await _wait_frames(2)
+
+# blocks/ 裡每個有色塊的零件輪流套 Skin（白色方塊圖）或 SkinAnimated（平常／啟動／走路），
+# 放在遠離玩家的地方，開關、打、重置一輪後拿掉；不崩潰、Player 還在
+func _test_skins() -> void:
+	var tex: Texture2D = preload("res://art/white_block.png")
+	var frames := _make_frames(["平常", "啟動", "走路", "受傷", "死亡"])
+	var skin_scene: PackedScene = load("res://skins/Skin.tscn")
+	var anim_scene: PackedScene = load("res://skins/SkinAnimated.tscn")
+	var index := 0
+	for path in _scan_scenes("res://blocks"):
+		var block: Node = (load(path) as PackedScene).instantiate()
+		if SkinLink.block_visual(block) == null:
+			block.free()
+			continue
+		var skin: Node
+		if index % 2 == 0:
+			skin = skin_scene.instantiate()
+			skin.texture_normal = tex
+			skin.texture_active = tex if index % 4 == 0 else null
+		else:
+			skin = anim_scene.instantiate()
+			skin.sprite_frames = frames
+		block.add_child(skin)
+		if block is Node2D:
+			block.position = Vector2(3000 + index * 40, 0)
+		add_child(block)
+		index += 1
+		await _wait_frames(5)
+		for method in ["deactivate", "activate", "toggle"]:
+			if block.has_method(method):
+				block.call(method)
+		if block.has_method("take_hit"):
+			for k in 3:
+				block.take_hit(1, Vector2.ZERO, self)
+		await _wait_frames(5)
+		if block.has_method("reset"):
+			block.reset()
+		await _wait_frames(5)
+		block.queue_free()
+		await get_tree().process_frame
+	if index == 0:
+		_fail("blocks/ 裡找不到任何有色塊的零件，套皮測試沒有測到東西")
+	if not is_instance_valid(_player):
+		_fail("套皮測試時 Player 消失了")
+
+# 三個 UI 範本跟 W4_SkinBox 的示範 UI：一輪直接放進場景（接法 B），一輪放進 UISettings（接法 A），
+# 中間讓數值變化（扣血、補血、撿金幣），最後全部拿掉；不崩潰、Player 還在
+func _test_ui_templates() -> void:
+	var sets := [
+		["res://ui/templates/HudTemplate.tscn", "res://ui/templates/PauseMenuTemplate.tscn", "res://ui/templates/ClearScreenTemplate.tscn"],
+		["res://levels/_starts/_W4SkinBox/ui/HudDemo.tscn", "res://levels/_starts/_W4SkinBox/ui/PauseMenuDemo.tscn", "res://levels/_starts/_W4SkinBox/ui/ClearScreenDemo.tscn"],
+	]
+	for paths in sets:
+		var placed: Array[Node] = []
+		for p in paths:
+			var root: Node = (load(p) as PackedScene).instantiate()
+			add_child(root)
+			placed.append(root)
+		await _ui_value_round()
+		for n in placed:
+			if is_instance_valid(n):
+				n.queue_free()
+		await _wait_frames(3)
+		var settings: Node = load("res://blocks/UISettings.tscn").instantiate()
+		settings.hud_scene = load(paths[0])
+		settings.pause_menu_scene = load(paths[1])
+		settings.clear_screen_scene = load(paths[2])
+		add_child(settings)
+		await _ui_value_round()
+		settings.queue_free()
+		await _wait_frames(3)
+	if not is_instance_valid(_player):
+		_fail("UI 範本測試時 Player 消失了")
+
+# 讓 HUD 顯示的數值變化一輪：扣血、補血、撿金幣，中間各等幾幀
+func _ui_value_round() -> void:
+	await _wait_frames(5)
+	_player.take_damage(1.0)
+	await _wait_frames(5)
+	Stats.add(Stats.HEALTH_KIND, 1)
+	Stats.add("金幣", 3)
+	await _wait_frames(10)
+	Stats.add("金幣", -3)
