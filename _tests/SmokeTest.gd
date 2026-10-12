@@ -122,6 +122,9 @@ func _run_all_steps() -> void:
 	await _test_ui_templates()
 	await _assert_can_move("UI 範本測試")
 
+	# 12. 像素專案預設值：貼圖 Nearest、整數縮放、像素字不抗鋸齒（設定被改掉的話字和圖會糊）
+	_test_pixel_defaults()
+
 	if _failed:
 		print("SMOKE TEST FAILED")
 		get_tree().quit(1)
@@ -580,6 +583,13 @@ func _test_ui_templates() -> void:
 		await _wait_frames(3)
 	if not is_instance_valid(_player):
 		_fail("UI 範本測試時 Player 消失了")
+
+# 專案設定與像素字的匯入設定跟 U188 定的一樣
+func _test_pixel_defaults() -> void:
+	var checker: Script = load("res://tests/ui/_scripts/PixelDefaultsTest.gd")
+	for line in checker.check_settings():
+		if line.begins_with("✗"):
+			_fail("像素預設值：%s" % line)
 
 # 讓 HUD 顯示的數值變化一輪：扣血、補血、撿金幣，中間各等幾幀
 func _ui_value_round() -> void:

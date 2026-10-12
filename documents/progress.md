@@ -799,6 +799,38 @@
 　　　順手修：拔掉 `Juice_Animator` 時角色圖翻面沒還原（鐵律 5）。README §3.2、§6，零件手冊 §1、§6、§7，速查表 §4、§6 補 W4。
 　　　煙霧測試通過（SMOKE TEST PASSED，只有預期內的中文警告）
 
+## 階段 53：W4 補強（標題畫面與畫面和諧工具）
+
+　　→ 講師決定（盤點後追加）：W4 補上標題畫面，以及讓學員畫面看起來一致的工具。順序 U188 → U189 → U191 → U190 → U193 → U192 → U194
+
+- [x] U188 像素專案預設值：像素字型關掉抗鋸齒、hinting、次像素定位；`UIRoot.font_size` 改成下拉（12 的整數倍）
+	  （驗證：`tests/ui/PixelDefaultsTest.tscn`）
+　　→ 盤點：貼圖 Nearest（`default_texture_filter=0`）、整數縮放（`window/stretch/scale_mode="integer"`）本來就設好了；
+　　　`Cubic_11.woff2` 400 KB、9159 個漢字、自由授權，不用子集化
+　　→ 講師決定：抽卡場景（`CardDraw`、`RuleCardDraw`）不是 12 倍數的字級，有必要就改成 12 的倍數
+- [ ] U188b 暫停選單、過關畫面範本加底框：`Center/List` 外面包一層 `PanelContainer`，底色跟著 `palette`；「預設」配色補深色半透明面板色；
+	  `W4_SkinBox` 的示範暫停選單、過關畫面一起改（驗證：`tests/ui/PauseMenuTemplateTest.tscn`、`tests/ui/ClearScreenTemplateTest.tscn`）
+　　→ 講師決定（U188 時提出）：選單沒有自己的底框，遊戲畫面花的時候看不清楚；暫停選單、過關畫面都加。學員已經再製出去的不會跟著改
+- [ ] U189 `TitleScreenTemplate`：標題畫面（獨立場景、設為主場景）；`MenuAction` 加「開始遊戲」（下拉選關卡）、「回標題」（回主場景）；
+	  換場景前自動載入的狀態歸零；暫停選單、過關畫面範本加「回標題」；外觀變體 2 個
+	  （驗證：`tests/ui/TitleScreenTemplateTest.tscn`、`tests/ui/TitleFlowTest.tscn`）
+　　→ 講師決定：標題是獨立場景，按開始換場景進關卡，讓學員練習換場景。CLAUDE.md 開例外：重生、整關重來仍不准換場景，
+　　　只有 `MenuAction` 的「開始遊戲」「回標題」可以。標題不進 `UISettings`（接法 A／B 只管 HUD、暫停選單、過關畫面）
+　　→ 講師決定：遊戲名稱、主視覺、Hook 字「欄位與直接改範本都做」：根節點欄位有填就蓋掉範本裡的，空白就保留範本原本的
+- [ ] U191 `UIRoot` 加 `style`（像素復古／乾淨極簡／可愛圓角，含九宮格面板）；`ColorGrade`（統一色調，`CanvasModulate`）
+	  （驗證：`tests/ui/StylePresetTest.tscn`、`tests/ui/ColorGradeTest.tscn`）
+　　→ 講師決定：三套風格都用 Cubic 11（換非像素中文字型網頁版要多好幾 MB）
+- [ ] U190 `SkinBackground`：背景零件（只放一張／重複鋪滿／拉伸蓋滿、可選視差、自動放最底）
+	  （驗證：`tests/skins/BackgroundSkinTest.tscn`）
+　　→ 講師決定：背景鋪在整個關卡上（跟地形一樣在世界裡），預設重複鋪滿、不視差
+- [ ] U193 風格一致性警告：`Skin`／`SkinAnimated`／`SkinBackground` 濾鏡不是 Nearest、縮放不是整數倍、像素密度跟場景裡多數的差 2 倍以上
+	  （驗證：`tests/skins/StyleWarningTest.tscn`）
+　　→ 講師決定：只出黃色驚嘆號、不阻擋；附 `ignore_style_check` 勾選框讓刻意混用的人關掉
+- [ ] U192 `SquintTest`：瞇眼測試（按鍵切換灰階＋模糊，暫停中也能用）
+	  （驗證：`tests/ui/SquintTestDemo.tscn`）
+　　→ 講師決定：只在編輯器裡按 F5／F6 時有效，匯出的遊戲裡不作用
+- [ ] U194 `W4_BadExample`：教學用壞範例（低優先，放 `tests/skins/`，不進學員壓縮檔、不進煙霧測試）
+
 ## 之後再做（構想，還沒排進單元）
 
 - GameFlow 加上狀態：管理「開始 → 進行中 → 過關／Game Over」，學員可以聽狀態變化的訊號；

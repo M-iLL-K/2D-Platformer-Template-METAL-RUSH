@@ -17,8 +17,8 @@ class_name UIRoot
 	set(value):
 		font = value
 		_apply_theme()
-## 字的大小（像素字型請用 12 的倍數）
-@export_range(12, 48, 12) var font_size: int = 12:
+## 字的大小：像素字只能放大成原本的整數倍，不然會糊或高低不齊
+@export_enum("原本大小 12:12", "2 倍 24:24", "3 倍 36:36", "4 倍 48:48") var font_size: int = 12:
 	set(value):
 		font_size = value
 		_apply_theme()
