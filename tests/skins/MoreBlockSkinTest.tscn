@@ -266,6 +266,7 @@ texture_normal = ExtResource("portal")
 
 [node name="PortalB_NoSkin" parent="." instance=ExtResource("Portal")]
 position = Vector2(215, -16)
+pair = NodePath("../PortalA_Skin")
 
 [node name="Fan1_Up" parent="." instance=ExtResource("Fan")]
 position = Vector2(90, -8)

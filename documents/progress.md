@@ -861,6 +861,15 @@
 　　　`tests/` 是 export-ignore，不進學員壓縮檔；不進煙霧測試
 　　→ 講師決定（Q9）：`export_presets.cfg` 網頁版、Windows 兩個匯出設定的 `exclude_filter` 填 `tests/*`，講師自己匯出時也不打包測試場景與測試素材
 
+## 階段 54：修正
+
+- [x] U195 傳送門不再自動連回：每座只管自己傳到哪，A 指定 B＝單向（B 只當出口），要雙向兩座互相指定
+	  （驗證：`tests/blocks/PortalTest.tscn`）
+　　→ 講師決定：學員只想做單向，另一座卻會自己接回來。選「改成不自動連回」（規則最單純），不另外加下拉或勾選框
+　　→ 實作：只當出口的那座編輯器不出驚嘆號，玩家站進去時輸出面板提醒一次怎麼做成雙向；
+　　　展示間與測試場景（Showroom、PortalTest、HazardToggleTest、MoreBlockSkinTest）的 B 補上指回 A，維持原本的雙向；
+　　　PortalTest 加一組單向（C → D）；pair 指到不是傳送門的東西時，警告拿掉「只能單向」的字樣
+
 ## 之後再做（構想，還沒排進單元）
 
 - GameFlow 加上狀態：管理「開始 → 進行中 → 過關／Game Over」，學員可以聽狀態變化的訊號；

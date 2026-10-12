@@ -84,6 +84,7 @@ pair = NodePath("../Show_Portal_B")
 
 [node name="Show_Portal_B" parent="." instance=ExtResource("9")]
 position = Vector2(1552, 144)
+pair = NodePath("../Show_Portal_A")
 
 [node name="Label_Portal" type="Label" parent="."]
 offset_left = 1472.0
