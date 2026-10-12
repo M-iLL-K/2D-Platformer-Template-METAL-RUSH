@@ -337,7 +337,11 @@ const TIMELINE := "時間軸"
   範本上紅線＝露在外面的邊、藍線＝平台站的那一面、淡黃＝裝飾；`art/tile_template_guide.png` 是放大 8 倍的中文說明圖。
 - 學員流程：再製 `default_tile.tres` 到 `_my/` → 把自己照範本畫好的圖拖進去取代 atlas 圖片 → 關卡的 `TileMapLayer` 換成自己的圖塊。
   因為格子位置一樣，碰撞形狀不用重畫。
-- 背景圖：直接在關卡裡加 `Sprite2D`／`Parallax2D`，用 Godot 原生的做法，不另外做零件（教學文件補一頁）。
+- 背景圖：`skins/SkinBackground.tscn`（U190，講師決定改成做零件）。內部生 `Parallax2D`＋`Sprite2D`，自己 `z_index = -100`（不相對），永遠在最底下。
+  `fill_style` 只放一張（在節點位置）／重複鋪滿（預設）／拉伸蓋滿；後兩種蓋住所有 `Room` 的範圍（沒有 Room 用 `TileMapLayer` 畫到的範圍），四周多留 2 格，
+  編輯器裡每半秒重新對齊。`parallax`＋`depth`（0.1～0.9）：`Parallax2D.scroll_scale = depth`，鏡頭左上角在 c 時看到的是 c × depth 起一個畫面大，
+  所以要蓋的範圍是「關卡範圍 × depth＋一個畫面」（編輯器裡照關卡範圍畫）。圖集切出來的圖重複鋪滿前先轉單張圖（同 `Skin`）。
+  `texture` 屬資源欄位例外：空白黃色驚嘆號＋執行時中文警告。放在有腳本或不是 Node／Node2D 的節點底下、兩個不視差的蓋滿背景疊在一起時黃色驚嘆號＋中文警告。
 
 ---
 

@@ -133,6 +133,10 @@ func _run_all_steps() -> void:
 	await _test_styles_and_grade()
 	await _assert_can_move("風格與統一色調測試")
 
+	# 15. 背景：三種鋪法 × 遠景開關、沒放圖、放兩個、放在 Player 底下（會警告，但遊戲照常），最後拔掉
+	await _test_background()
+	await _assert_can_move("背景測試")
+
 	if _failed:
 		print("SMOKE TEST FAILED")
 		get_tree().quit(1)
@@ -653,6 +657,33 @@ func _test_styles_and_grade() -> void:
 	for n in roots + grades:
 		if is_instance_valid(n):
 			n.queue_free()
+	await _wait_frames(3)
+
+# 背景零件各種設定輪一次，放錯地方也不能讓遊戲壞掉
+func _test_background() -> void:
+	var scene: PackedScene = load("res://skins/SkinBackground.tscn")
+	var tex: Texture2D = load("res://art/blocks.png")
+	var placed: Array[Node] = []
+	for i in 2:
+		var bg: Node = scene.instantiate()
+		bg.texture = tex
+		add_child(bg)
+		placed.append(bg)
+	var empty: Node = scene.instantiate()
+	add_child(empty)
+	placed.append(empty)
+	var under_player: Node = scene.instantiate()
+	under_player.texture = tex
+	_player.add_child(under_player)
+	placed.append(under_player)
+	for fill in 3:
+		for par in [false, true]:
+			for bg in placed:
+				bg.fill_style = fill
+				bg.parallax = par
+			await _wait_frames(2)
+	for bg in placed:
+		bg.queue_free()
 	await _wait_frames(3)
 
 # 讓 HUD 顯示的數值變化一輪：扣血、補血、撿金幣，中間各等幾幀

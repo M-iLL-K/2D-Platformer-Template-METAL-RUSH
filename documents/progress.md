@@ -834,9 +834,12 @@
 　　　`ColorGrade` 用 `CanvasModulate`，放兩個、放在 CanvasLayer 底下時黃色驚嘆號＋中文警告
 　　→ 順手修（講師驗收時發現）：`VolumeSlider` 的百分比原本掛在拉桿外面，不算進大小，有底框之後跑出框外。
 　　　改成 `HBoxContainer`（內部拉桿＋百分比，百分比固定留「100%」的寬），容器會照整個寬度撐開；欄位不變，既有的場景不用改
-- [ ] U190 `SkinBackground`：背景零件（只放一張／重複鋪滿／拉伸蓋滿、可選視差、自動放最底）
+- [x] U190 `SkinBackground`：背景零件（只放一張／重複鋪滿／拉伸蓋滿、可選視差、自動放最底）
 	  （驗證：`tests/skins/BackgroundSkinTest.tscn`）
 　　→ 講師決定：背景鋪在整個關卡上（跟地形一樣在世界裡），預設重複鋪滿、不視差
+　　→ 實作：內部 `Parallax2D`＋`Sprite2D`，`z_index = -100`；蓋滿的範圍是所有 Room 加起來（沒有 Room 看地形），編輯器每半秒重新對齊；
+　　　遠景要蓋的範圍是「關卡範圍 × depth＋一個畫面」（實測 4.7.2 的 `Parallax2D`：鏡頭移動 1000、scroll_scale 0.5 時背景在畫面上只移 500）；
+　　　沒放圖、放在別的東西底下、兩個不視差的蓋滿背景疊在一起時黃色驚嘆號＋中文警告。測試用講師的 `tests/skins/_art/Background/` 素材
 - [ ] U193 風格一致性警告：`Skin`／`SkinAnimated`／`SkinBackground` 濾鏡不是 Nearest、縮放不是整數倍、像素密度跟場景裡多數的差 2 倍以上
 	  （驗證：`tests/skins/StyleWarningTest.tscn`）
 　　→ 講師決定：只出黃色驚嘆號、不阻擋；附 `ignore_style_check` 勾選框讓刻意混用的人關掉
