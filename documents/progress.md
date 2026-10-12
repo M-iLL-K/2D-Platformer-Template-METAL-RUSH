@@ -736,7 +736,12 @@
 
 - [x] U177 `Skin`、`SkinAnimated`（欄位、編輯器畫原本色塊的外框、放錯地方的警告、動畫名稱檢查）；零件端的共用接法
 	  （驗證：`tests/skins/SkinTest.tscn`）
-- [ ] U178 零件逐一支援皮：終點、按鈕、重生點、門、開關方塊、道具、尖刺、岩漿（狀態回饋改作用在皮上）
+- [x] U178 零件逐一支援皮：終點、按鈕、重生點、門、開關方塊、道具、尖刺、岩漿（狀態回饋改作用在皮上）
+　　→ 講師決定：狀態改變後怎麼顯示「都提供選項」：`Skin`／`SkinAnimated` 加 `active_style` 下拉（換圖就好／換圖再加原本效果／只用原本效果，預設換圖就好）。
+　　　原本效果＝終點、按鈕、重生點變色，門打開變淡，開關方塊關掉藏起來，尖刺岩漿關掉變暗；沒有狀態圖（`texture_active`／「啟動」動畫）時一律用原本效果，
+　　　`Skin` 沒放 `texture_active` 時不顯示這個欄位。開關方塊、尖刺、岩漿的「狀態改變後」＝關掉（驗證：`tests/skins/BlockSkinTest.tscn`）
+　　→ 講師決定：皮的測試場景用講師自己的素材，放 `tests/skins/_art/`（不進 git，暫代圖在 `_art/AI_Placeholder/`，講師之後自己畫來換）；
+　　　別台電腦沒有這個資料夾時，`SkinTest`、`BlockSkinTest` 會缺圖
 - [ ] U179 零件逐一支援皮：其餘有色塊的零件（箱子、可破壞、崩塌地板、彈射、風扇、移動平台、單向平台、傳送門…）
 - [ ] U180 敵人支援皮（轉向跟著翻、走路／受傷／死亡動畫）
 - [ ] U181 `Ability_Ranged`／`EnemyShooter` 的 `bullet_texture`、`Ability_Melee` 的 `slash_texture`

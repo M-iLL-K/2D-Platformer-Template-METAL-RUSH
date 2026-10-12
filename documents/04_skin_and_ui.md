@@ -231,11 +231,17 @@ const TIMELINE := "時間軸"
 ```gdscript
 ## 平常的樣子：從檔案系統把圖片拖進來
 @export var texture_normal: Texture2D
-## 狀態改變後的樣子（終點踩到、按鈕亮起、門打開、重生點啟用、開關方塊切換…）；空白就用平常的圖再變色表示
+## 狀態改變後的樣子（終點踩到、按鈕亮起、門打開、重生點啟用、開關方塊關掉、尖刺岩漿關掉…）；空白就用平常的圖再變色表示
 @export var texture_active: Texture2D
+## 狀態改變後怎麼顯示：只換成 texture_active、換圖之外再加零件原本的效果（變色、變淡、藏起來、變暗），
+## 或不換圖只用原本的效果
+@export_enum("換圖就好", "換圖再加原本效果", "只用原本效果") var active_style: int = 0
 ## 要不要跟著零件左右翻（敵人轉向）
 @export var follow_facing: bool = true
 ```
+
+`active_style`（講師決定：都提供選項，U178）：零件原本的狀態回饋是終點、按鈕、重生點變色，門打開變淡，
+開關方塊關掉藏起來，尖刺、岩漿關掉變暗。沒有 `texture_active` 時一律用原本效果，Inspector 也不顯示這個欄位。
 
 ### 6.2 `SkinAnimated`（動畫）
 
@@ -243,7 +249,7 @@ const TIMELINE := "時間軸"
   - 一般零件：「平常」「啟動」（啟動＝狀態改變後，同 `texture_active` 的時機）
   - 敵人：「走路」「受傷」「死亡」（沒有「受傷」「死亡」就繼續播「走路」）
 - 缺「平常」（或敵人缺「走路」）→ 黃色驚嘆號，列出現有的動畫名稱並附近似名稱建議（`NameCheck`）。
-- `follow_facing` 同 `Skin`。
+- `follow_facing`、`active_style` 同 `Skin`（沒有「啟動」動畫時一律用原本效果）。
 
 ### 6.3 程式生出來的東西
 

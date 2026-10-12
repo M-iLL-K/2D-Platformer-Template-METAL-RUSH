@@ -12,6 +12,12 @@ const BLOCK_VISUAL_NAMES := ["Visual", "BodyVisual"]
 const _ENEMY_SCRIPTS := ["res://blocks/_scripts/Enemy.gd", "res://blocks/_scripts/EnemyShooter.gd"]
 # 狀態改變後沒有另外的圖時，平常的圖往狀態顏色染多少（0～1）
 const _TINT_STRENGTH := 0.6
+# 尖刺、岩漿關掉時變暗的顏色（跟色塊原本變暗的程度一樣）
+const _DARK := Color(0.45, 0.45, 0.45)
+# 皮的「狀態改變後」選項：換圖就好、換圖再加原本效果、只用原本效果（皮沒有狀態圖時一律當成只用原本效果）
+const LOOK_SWAP_ONLY := 0
+const LOOK_SWAP_AND_EFFECT := 1
+const LOOK_EFFECT_ONLY := 2
 
 var _owner: Node = null
 var _rect: CanvasItem = null
@@ -44,13 +50,42 @@ func _init(owner: Node, color_rect: CanvasItem) -> void:
 func has_skin() -> bool:
 	return _skin != null
 
-# 顯示零件的狀態：active 是「狀態改變後」（終點踩到、門打開…），color 是色塊在這個狀態的顏色。
-# 有皮時換成 texture_active／「啟動」動畫，沒有的話平常的圖往 color 染色
+# 顯示零件的狀態（變色的零件：終點、按鈕、重生點）：active 是「狀態改變後」（終點踩到、按鈕亮起…），
+# color 是色塊在這個狀態的顏色；皮沒有狀態圖（或選了只用原本效果）時把圖往 color 染色
 func show_state(active: bool, color: Color) -> void:
 	if _skin != null:
-		_skin.skin_set_state(active, Color.WHITE.lerp(color, _TINT_STRENGTH))
+		_show_on_skin(active, Color.WHITE.lerp(color, _TINT_STRENGTH), false)
 	elif _rect is ColorRect:
 		(_rect as ColorRect).color = color
+
+# 顯示零件的狀態（變淡的零件：門打開）：active 時變淡成 alpha
+func show_faded(active: bool, alpha: float) -> void:
+	if _skin != null:
+		_show_on_skin(active, Color(1, 1, 1, alpha), false)
+	elif _rect != null:
+		_rect.modulate.a = alpha if active else 1.0
+
+# 顯示零件的狀態（藏起來的零件：開關方塊關掉）：active 時整個看不到
+func show_hidden(active: bool) -> void:
+	if _skin != null:
+		_show_on_skin(active, Color.WHITE, true)
+	elif _rect != null:
+		_rect.visible = not active
+
+# 顯示零件的狀態（變暗的零件：尖刺、岩漿關掉）：active 時變暗
+func show_dark(active: bool) -> void:
+	if _skin != null:
+		_show_on_skin(active, _DARK, false)
+	elif _rect != null:
+		_rect.modulate = _DARK if active else Color.WHITE
+
+# 把狀態套到皮上：依皮的「狀態改變後」選項決定換圖、加原本效果（tint 染色／變淡、hide 藏起來），或兩個都做
+func _show_on_skin(active: bool, tint: Color, hide: bool) -> void:
+	var look: int = _skin.skin_active_look() if active else LOOK_EFFECT_ONLY
+	var swap := active and look != LOOK_EFFECT_ONLY
+	var effect := active and look != LOOK_SWAP_ONLY
+	_skin.skin_set_state(swap, tint if effect else Color.WHITE)
+	_skin.visible = not (effect and hide)
 
 # 整個零件變淡（alpha 0～1），例如崩塌地板快消失、門打開後半透明
 func set_alpha(alpha: float) -> void:

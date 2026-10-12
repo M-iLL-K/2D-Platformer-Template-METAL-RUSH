@@ -8,6 +8,9 @@ extends AnimatedSprite2D
 
 ## 要不要跟著零件左右翻（敵人轉向）
 @export var follow_facing: bool = true
+## 狀態改變後怎麼顯示：只換成「啟動」動畫、換動畫之外再加零件原本的效果（變色、變淡、藏起來、變暗），
+## 或不換動畫只用原本的效果；沒有「啟動」動畫時一律用原本的效果
+@export_enum("換圖就好", "換圖再加原本效果", "只用原本效果") var active_style: int = 0
 
 const NORMAL := "平常"
 const ACTIVE := "啟動"
@@ -90,14 +93,16 @@ func skin_setup(is_enemy: bool) -> String:
 	play(_base)
 	return ""
 
-# 零件呼叫：狀態改變後播「啟動」，沒有「啟動」就把平常的動畫染色
-func skin_set_state(active: bool, tint: Color) -> void:
-	if active and sprite_frames.has_animation(ACTIVE):
-		self_modulate = Color.WHITE
-		play(ACTIVE)
-	else:
-		self_modulate = tint if active else Color.WHITE
-		play(_base)
+# 零件呼叫：狀態改變後要怎麼顯示（SkinLink.LOOK_…）；沒有「啟動」動畫時只能用原本的效果
+func skin_active_look() -> int:
+	return active_style if sprite_frames.has_animation(ACTIVE) else SkinLink.LOOK_EFFECT_ONLY
+
+# 零件呼叫：播「啟動」（use_active）或平常的動畫，再用 tint 染色／變淡（不加效果時是白色）；已經在播同一段就不重播
+func skin_set_state(use_active: bool, tint: Color) -> void:
+	self_modulate = tint
+	var anim := ACTIVE if use_active and sprite_frames.has_animation(ACTIVE) else _base
+	if animation != anim:
+		play(anim)
 
 # 零件呼叫：面向左邊時翻過來（follow_facing 有勾才翻）
 func skin_set_facing(facing_left: bool) -> void:

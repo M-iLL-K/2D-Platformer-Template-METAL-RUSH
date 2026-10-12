@@ -12,8 +12,14 @@ extends Sprite2D
 		texture_normal = value
 		texture = value
 		update_configuration_warnings()
-## 狀態改變後的樣子（終點踩到、按鈕亮起、門打開、重生點啟用、開關方塊切換…）；空白就用平常的圖再變色表示
-@export var texture_active: Texture2D
+## 狀態改變後的樣子（終點踩到、按鈕亮起、門打開、重生點啟用、開關方塊關掉、尖刺岩漿關掉…）；空白就用平常的圖再變色表示
+@export var texture_active: Texture2D:
+	set(value):
+		texture_active = value
+		notify_property_list_changed()
+## 狀態改變後怎麼顯示：只換成 texture_active、換圖之外再加零件原本的效果（變色、變淡、藏起來、變暗），
+## 或不換圖只用原本的效果
+@export_enum("換圖就好", "換圖再加原本效果", "只用原本效果") var active_style: int = 0
 ## 要不要跟著零件左右翻（敵人轉向）
 @export var follow_facing: bool = true
 
@@ -31,10 +37,13 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PARENTED or what == NOTIFICATION_UNPARENTED:
 		update_configuration_warnings()
 
-# texture 由 texture_normal 決定，不存進場景檔、Inspector 也不顯示，免得學員拖錯格
+# texture 由 texture_normal 決定，不存進場景檔、Inspector 也不顯示，免得學員拖錯格；
+# 沒有 texture_active 時 active_style 沒有意義，也不顯示
 func _validate_property(property: Dictionary) -> void:
 	if property.name == "texture":
 		property.usage = PROPERTY_USAGE_NONE
+	elif property.name == "active_style" and texture_active == null:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
 
 # 編輯器裡畫原本色塊的虛線外框
 func _draw() -> void:
@@ -58,14 +67,14 @@ func skin_setup(_is_enemy: bool) -> String:
 	texture = texture_normal
 	return ""
 
-# 零件呼叫：切換平常／狀態改變後的樣子；沒有 texture_active 時用 tint 把平常的圖染色
-func skin_set_state(active: bool, tint: Color) -> void:
-	if active and texture_active != null:
-		texture = texture_active
-		self_modulate = Color.WHITE
-	else:
-		texture = texture_normal
-		self_modulate = tint if active else Color.WHITE
+# 零件呼叫：狀態改變後要怎麼顯示（SkinLink.LOOK_…）；沒有 texture_active 時只能用原本的效果
+func skin_active_look() -> int:
+	return active_style if texture_active != null else SkinLink.LOOK_EFFECT_ONLY
+
+# 零件呼叫：換成 texture_active（use_active）或平常的圖，再用 tint 染色／變淡（不加效果時是白色）
+func skin_set_state(use_active: bool, tint: Color) -> void:
+	texture = texture_active if use_active and texture_active != null else texture_normal
+	self_modulate = tint
 
 # 零件呼叫：面向左邊時翻過來（follow_facing 有勾才翻）
 func skin_set_facing(facing_left: bool) -> void:
