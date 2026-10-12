@@ -853,7 +853,13 @@
 　　→ 實作：放 `skins/`（講師決定 Q5），驗證場景改名 `tests/ui/SquintTestDemo.tscn`（避免 TestTest）；選的鍵被占用時讓出並提醒，多放的自己拿掉。
 　　　選 Tab 時，選單有按鈕被選中的話 Tab 會先被選單拿去切換按鈕（Godot 內建的鍵盤操作），所以預設用 F1
 　　→ 講師決定（驗收時提出）：瞇眼不代表要變黑白。`style` 下拉「只模糊」（預設，顏色還在）／「模糊＋黑白」（只看明暗）
-- [ ] U194 `W4_BadExample`：教學用壞範例（低優先，放 `tests/skins/`，不進學員壓縮檔、不進煙霧測試）
+- [x] U194 `W4_BadExample`：教學用壞範例（低優先，放 `tests/skins/`，不進學員壓縮檔、不進煙霧測試）
+	  （驗證：`tests/skins/W4_BadExample.tscn`）
+　　→ 實作：複製 W4_SkinBox 同一條路線（方便並排截圖）：金幣三種畫風輪流（原本的、AI 金幣 1.5 倍、蘋果 0.4 倍＋Linear）、
+　　　尖刺換別套素材 0.7 倍＋Linear、終點換 AI 圖 1.3 倍、背景亮黃格子（`SkinBackground`＋調亮）、
+　　　HUD（`tests/skins/_bad/BadHud.tscn`）四種字型（像素字＋系統的 Times New Roman／Comic Sans／Impact）、四種顏色、位置沒對齊、正中間一行大標題。
+　　　`tests/` 是 export-ignore，不進學員壓縮檔；不進煙霧測試
+　　→ 講師決定（Q9）：`export_presets.cfg` 網頁版、Windows 兩個匯出設定的 `exclude_filter` 填 `tests/*`，講師自己匯出時也不打包測試場景與測試素材
 
 ## 之後再做（構想，還沒排進單元）
 
