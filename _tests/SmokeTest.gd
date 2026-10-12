@@ -355,6 +355,7 @@ func _emit_every_juice_event() -> void:
 	_player.landed.emit(600.0)
 	_player.hurt.emit()
 	_player.wall_hit.emit()
+	_player.ceiling_hit.emit()
 	_player.started_moving.emit()
 	_player.direction_changed.emit(1)
 	_player.direction_changed.emit(-1)
