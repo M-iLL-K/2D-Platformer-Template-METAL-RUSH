@@ -16,6 +16,18 @@ const _DIRECTIONAL_SCRIPTS := {
 }
 # 狀態改變後沒有另外的圖時，平常的圖往狀態顏色染多少（0～1）
 const _TINT_STRENGTH := 0.6
+# SkinEvent「什麼時候」下拉顯示的中文：零件訊號名稱 → 中文（沒列到的照訊號名稱顯示）
+const _EVENT_LABELS := {
+	"reached": "踩到時",
+	"turned_on": "打開時",
+	"turned_off": "關掉時",
+	"opened": "門打開時",
+	"closed": "門關上時",
+	"launched": "彈出時",
+	"teleported": "傳送時",
+}
+# 這些事件發生時零件馬上藏起來，播動畫也看不到，不列進 SkinEvent 的下拉（敵人被打倒用「死亡」動畫）
+const _EVENT_SKIP := ["collected", "broken", "crumbled", "defeated"]
 # 尖刺、岩漿關掉時變暗的顏色（跟色塊原本變暗的程度一樣）
 const _DARK := Color(0.45, 0.45, 0.45)
 # 皮的「狀態改變後」選項：換圖就好、換圖再加原本效果、只用原本效果（皮沒有狀態圖時一律當成只用原本效果）
@@ -52,6 +64,8 @@ func _init(owner: Node, color_rect: CanvasItem) -> void:
 		_skin = null
 		return
 	_skin_origin = _skin.position
+	if _skin.has_method("skin_bind"):
+		_skin.skin_bind(owner)
 	if _rect != null:
 		_rect.visible = false
 
@@ -142,6 +156,19 @@ func reset_anim() -> void:
 static func is_enemy_host(node: Node) -> bool:
 	var host_script: Script = node.get_script() if node != null else null
 	return host_script != null and host_script.resource_path in _ENEMY_SCRIPTS
+
+# 這個零件有哪些事件可以讓 SkinEvent 播動畫：中文 → 訊號名稱（照零件定義的順序）
+static func event_signals(host: Node) -> Dictionary:
+	var result := {}
+	var host_script: Script = host.get_script() if host != null else null
+	if host_script == null:
+		return result
+	for info in host_script.get_script_signal_list():
+		var signal_name: String = info.name
+		if signal_name in _EVENT_SKIP:
+			continue
+		result[_EVENT_LABELS.get(signal_name, signal_name)] = signal_name
+	return result
 
 # 這個零件有沒有方向（風扇吹的方向），皮可以跟著轉
 static func is_directional_host(node: Node) -> bool:

@@ -33,6 +33,9 @@ var _base := NORMAL   # 沒有指定的動畫時播哪一段（一般零件「�
 var _check_timer := 0.0
 var _base_flip := false  # 編輯器裡 Flip H 有沒有勾（當作「朝右」的樣子）
 var _play_id := 0  # 每播一段加一，讓循環的「受傷」播一輪後回到平常（中間換播別段就不回）
+var _state_anim := NORMAL  # 現在的狀態該播哪一段（平常或「啟動」），事件動畫播完回到這段
+var _event_id := 0  # 每播一次事件動畫加一，讓舊的「播完回去」失效
+var _in_event := false  # 正在播 SkinEvent 的動畫：這段時間狀態改變先記著，播完再換
 
 # 編輯器裡持續重畫外框、檢查動畫名稱；換一格就重新對齊（每格大小可能不一樣）
 func _ready() -> void:
@@ -138,6 +141,7 @@ func skin_setup(is_enemy: bool) -> String:
 	if problem != "":
 		return problem
 	_base = WALK if is_enemy else NORMAL
+	_state_anim = _base
 	_base_flip = flip_h
 	animation_finished.connect(_on_animation_finished)
 	play(_base)
@@ -147,12 +151,39 @@ func skin_setup(is_enemy: bool) -> String:
 func skin_active_look() -> int:
 	return active_style if sprite_frames.has_animation(ACTIVE) else SkinLink.LOOK_EFFECT_ONLY
 
-# 零件呼叫：播「啟動」（use_active）或平常的動畫，再用 tint 染色／變淡（不加效果時是白色）；已經在播同一段就不重播
+# 零件呼叫：播「啟動」（use_active）或平常的動畫，再用 tint 染色／變淡（不加效果時是白色）；已經在播同一段就不重播。
+# 正在播事件動畫時先記著，播完再換
 func skin_set_state(use_active: bool, tint: Color) -> void:
 	self_modulate = tint
-	var anim := ACTIVE if use_active and sprite_frames.has_animation(ACTIVE) else _base
-	if animation != anim:
-		play(anim)
+	_state_anim = ACTIVE if use_active and sprite_frames.has_animation(ACTIVE) else _base
+	if not _in_event and animation != _state_anim:
+		play(_state_anim)
+
+# SkinLink 開場時呼叫：把零件交給底下的 SkinEvent，讓它們去聽零件的事件
+func skin_bind(host: Node) -> void:
+	for child in get_children():
+		if child.has_method("skin_event_setup"):
+			child.skin_event_setup(host, self)
+
+# SkinEvent 在編輯器裡用：這個皮套在哪個零件上（列出零件有哪些事件）
+func skin_host() -> Node:
+	return get_parent()
+
+# SkinEvent 呼叫：從頭播一次這段動畫（勾了循環也只播一輪），播完回到現在狀態該播的那段
+func play_event(anim_name: String) -> void:
+	if not sprite_frames.has_animation(anim_name):
+		return
+	_event_id += 1
+	_play_id += 1
+	_in_event = true
+	stop()
+	play(anim_name)
+	var id := _event_id
+	get_tree().create_timer(skin_anim_length(anim_name)).timeout.connect(func():
+		if id == _event_id:
+			_in_event = false
+			play(_state_anim)
+	)
 
 # 零件呼叫：面向左邊時翻過來（follow_facing 有勾才翻），以編輯器裡的 Flip H 當朝右的樣子
 func skin_set_facing(facing_left: bool) -> void:
@@ -163,6 +194,8 @@ func skin_set_facing(facing_left: bool) -> void:
 # 「受傷」就算勾了循環，播一輪也會回到平常
 func skin_play(anim_name: String) -> void:
 	_play_id += 1
+	_event_id += 1
+	_in_event = false
 	if not sprite_frames.has_animation(anim_name):
 		if animation != _base:
 			play(_base)
@@ -190,6 +223,9 @@ func skin_anim_length(anim_name: String) -> float:
 # 零件呼叫：回到平常的動畫（敵人復活時從「死亡」回到「走路」）
 func skin_reset() -> void:
 	_play_id += 1
+	_event_id += 1
+	_in_event = false
+	_state_anim = _base
 	play(_base)
 
 # 「受傷」播完回到平常的那一段（「死亡」停在最後一格）
