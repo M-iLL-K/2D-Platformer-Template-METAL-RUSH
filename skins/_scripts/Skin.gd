@@ -38,6 +38,7 @@ const FILL_STRETCH := 2
 
 var _shown: Texture2D = null  # 現在顯示的是哪一張（平常或狀態改變後）
 var _tile_textures := {}  # 從圖集切出來的圖要重複鋪滿時，先轉成單張圖（圖集直接重複會鋪到整張大圖）
+var _base_flip := false  # 編輯器裡 Flip H 有沒有勾（當作「朝右」的樣子）
 
 # 顯示平常的圖；編輯器裡持續重畫外框（零件大小改了框跟著變）
 func _ready() -> void:
@@ -130,6 +131,7 @@ func skin_setup(_is_enemy: bool) -> String:
 	if texture_normal == null:
 		return "texture_normal 是空的，請把圖片拖進來"
 	_show(texture_normal)
+	_base_flip = flip_h
 	return ""
 
 # 零件呼叫：狀態改變後要怎麼顯示（SkinLink.LOOK_…）；沒有 texture_active 時只能用原本的效果
@@ -143,11 +145,19 @@ func skin_set_state(use_active: bool, tint: Color) -> void:
 		_show(tex)
 	self_modulate = tint
 
-# 零件呼叫：面向左邊時翻過來（follow_facing 有勾才翻）
+# 零件呼叫：面向左邊時翻過來（follow_facing 有勾才翻），以編輯器裡的 Flip H 當朝右的樣子
 func skin_set_facing(facing_left: bool) -> void:
 	if follow_facing:
-		flip_h = facing_left
+		flip_h = _base_flip != facing_left
 
 # 零件呼叫：靜態圖沒有動畫，什麼都不做
 func skin_play(_anim_name: String) -> void:
+	pass
+
+# 零件呼叫：靜態圖沒有動畫，長度是 0
+func skin_anim_length(_anim_name: String) -> float:
+	return 0.0
+
+# 零件呼叫：靜態圖沒有動畫，什麼都不做
+func skin_reset() -> void:
 	pass

@@ -9,7 +9,7 @@ extends RefCounted
 # 零件裡色塊的節點名稱（風扇的本體叫 BodyVisual）
 const BLOCK_VISUAL_NAMES := ["Visual", "BodyVisual"]
 # 這些零件是敵人：動畫名稱用「走路」「受傷」「死亡」
-const _ENEMY_SCRIPTS := ["res://blocks/_scripts/Enemy.gd", "res://blocks/_scripts/EnemyShooter.gd"]
+const _ENEMY_SCRIPTS := ["res://blocks/_scripts/Enemy.gd"]
 # 這些零件有方向（direction 下拉），皮勾了 follow_direction 會跟著轉；值是每個選項要轉幾度（圖畫成朝上）
 const _DIRECTIONAL_SCRIPTS := {
 	"res://blocks/_scripts/Fan.gd": [0.0, 180.0, -90.0, 90.0],  # 上、下、左、右
@@ -116,7 +116,8 @@ func set_shake(offset: Vector2) -> void:
 	elif _rect is Control:
 		(_rect as Control).position = _rect_origin + offset
 
-# 零件面向左邊還是右邊（敵人轉向），皮勾了 follow_facing 才會翻
+# 零件面向左邊還是右邊（敵人轉向），皮勾了 follow_facing 才會翻；
+# 以皮在編輯器裡的 Flip H 當「朝右」的樣子（圖朝左畫的，學員勾 Flip H 讓它朝右）
 func set_facing(facing_left: bool) -> void:
 	if _skin != null:
 		_skin.skin_set_facing(facing_left)
@@ -125,6 +126,15 @@ func set_facing(facing_left: bool) -> void:
 func play(anim_name: String) -> void:
 	if _skin != null:
 		_skin.skin_play(anim_name)
+
+# 這段動畫播一次要幾秒；靜態的皮、沒有這段動畫時回傳 0（敵人用來決定死掉後多久才藏起來）
+func anim_length(anim_name: String) -> float:
+	return _skin.skin_anim_length(anim_name) if _skin != null else 0.0
+
+# 回到平常的動畫（敵人重生復活時，從停在最後一格的「死亡」回到「走路」）
+func reset_anim() -> void:
+	if _skin != null:
+		_skin.skin_reset()
 
 # ---- Skin、SkinAnimated 共用
 

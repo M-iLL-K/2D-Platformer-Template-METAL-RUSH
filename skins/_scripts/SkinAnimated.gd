@@ -31,6 +31,8 @@ const _CHECK_SECONDS := 1.0
 
 var _base := NORMAL   # 沒有指定的動畫時播哪一段（一般零件「平常」、敵人「走路」）
 var _check_timer := 0.0
+var _base_flip := false  # 編輯器裡 Flip H 有沒有勾（當作「朝右」的樣子）
+var _play_id := 0  # 每播一段加一，讓循環的「受傷」播一輪後回到平常（中間換播別段就不回）
 
 # 編輯器裡持續重畫外框、檢查動畫名稱；換一格就重新對齊（每格大小可能不一樣）
 func _ready() -> void:
@@ -136,6 +138,7 @@ func skin_setup(is_enemy: bool) -> String:
 	if problem != "":
 		return problem
 	_base = WALK if is_enemy else NORMAL
+	_base_flip = flip_h
 	animation_finished.connect(_on_animation_finished)
 	play(_base)
 	return ""
@@ -151,17 +154,43 @@ func skin_set_state(use_active: bool, tint: Color) -> void:
 	if animation != anim:
 		play(anim)
 
-# 零件呼叫：面向左邊時翻過來（follow_facing 有勾才翻）
+# 零件呼叫：面向左邊時翻過來（follow_facing 有勾才翻），以編輯器裡的 Flip H 當朝右的樣子
 func skin_set_facing(facing_left: bool) -> void:
 	if follow_facing:
-		flip_h = facing_left
+		flip_h = _base_flip != facing_left
 
-# 零件呼叫：播指定的動畫（敵人的「受傷」「死亡」）；沒有這段就繼續播平常的
+# 零件呼叫：播指定的動畫（敵人的「受傷」「死亡」）；沒有這段就繼續播平常的。
+# 「受傷」就算勾了循環，播一輪也會回到平常
 func skin_play(anim_name: String) -> void:
-	if sprite_frames.has_animation(anim_name):
-		play(anim_name)
-	elif animation != _base:
-		play(_base)
+	_play_id += 1
+	if not sprite_frames.has_animation(anim_name):
+		if animation != _base:
+			play(_base)
+		return
+	play(anim_name)
+	if anim_name == HURT and sprite_frames.get_animation_loop(HURT):
+		var id := _play_id
+		get_tree().create_timer(skin_anim_length(HURT)).timeout.connect(func():
+			if id == _play_id and animation == HURT:
+				play(_base)
+		)
+
+# 零件呼叫：這段動畫播一次要幾秒（沒有這段回傳 0）
+func skin_anim_length(anim_name: String) -> float:
+	if sprite_frames == null or not sprite_frames.has_animation(anim_name):
+		return 0.0
+	var fps := sprite_frames.get_animation_speed(anim_name) * absf(speed_scale)
+	if fps <= 0.0:
+		return 0.0
+	var total := 0.0
+	for i in sprite_frames.get_frame_count(anim_name):
+		total += sprite_frames.get_frame_duration(anim_name, i)
+	return total / fps
+
+# 零件呼叫：回到平常的動畫（敵人復活時從「死亡」回到「走路」）
+func skin_reset() -> void:
+	_play_id += 1
+	play(_base)
 
 # 「受傷」播完回到平常的那一段（「死亡」停在最後一格）
 func _on_animation_finished() -> void:

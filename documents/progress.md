@@ -748,7 +748,10 @@
 　　　風扇的皮跟不跟著吹的方向轉「給選項」：`follow_direction`（預設勾，圖畫成朝上吹），只在風扇底下顯示。
 　　　彈射台彈出時播動畫不寫死名稱，改成學員自己加：另開 U180b `SkinEvent`。風扇關掉算「狀態改變後」（同 U178 的開關方塊、尖刺、岩漿）
 　　　（驗證：`tests/skins/MoreBlockSkinTest.tscn`）
-- [ ] U180 敵人支援皮（轉向跟著翻、走路／受傷／死亡動畫）
+- [x] U180 敵人支援皮（轉向跟著翻、走路／受傷／死亡動畫）
+　　→ 講師決定：圖朝左畫的素材不另外加欄位，用 Godot 內建的 Flip H：學員勾 Flip H 讓圖在編輯器裡朝右（敵人一開始往右走），
+　　　轉向時以勾好的樣子為基準再翻。「死亡」動畫播完才藏起來（死掉當下就沒有碰撞、不傷人），「受傷」勾了循環也只播一輪
+　　　（驗證：`tests/skins/EnemySkinTest.tscn`）
 - [ ] U180b `SkinEvent`：拖到 `SkinAnimated` 底下，「什麼時候」下拉自動列出零件的事件（中文，例如彈射台「彈出時」、傳送門「傳送時」），
 	  「播哪段」下拉自動列出 SpriteFrames 裡的動畫，播完回到平常；不用打字、不用連線；放錯地方、動畫被刪掉時黃色驚嘆號（講師決定，U179 提出）
 - [ ] U181 `Ability_Ranged`／`EnemyShooter` 的 `bullet_texture`、`Ability_Melee` 的 `slash_texture`
