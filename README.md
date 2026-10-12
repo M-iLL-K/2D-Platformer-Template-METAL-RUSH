@@ -76,7 +76,8 @@
 
 **換 HUD**：`ui/templates/HudTemplate.tscn` 按右鍵 **再製**（Duplicate）→ 存到 `_my/` → 打開改（拖位置、換圖、加零件選數值）→ 把它拖進關卡。
 **換暫停選單／過關畫面**：`PauseMenuTemplate`、`ClearScreenTemplate` 一樣再製到 `_my/` 改好，拖進關卡裡 `UISettings` 的欄位
-（關卡沒有 `UISettings` 的話從 `blocks/` 拖一個）。整套字型、配色：點畫面最上層，改 `font`、`font_size`、`palette`。
+（關卡沒有 `UISettings` 的話從 `blocks/` 拖一個）。整套字型、配色、風格：點畫面最上層，改 `font`、`font_size`、`palette`、`style`。
+素材顏色兜不起來：從 `skins/` 拖 `ColorGrade` 進關卡，選色調、拉強度，整個畫面就會統一成同一種氣氛。
 
 **做標題畫面**：`ui/templates/` 裡三個標題範本（`TitleScreenTemplate` 上中下三段、`_Center` 主視覺當背景、`_Side` 左文右圖）挑一個
 右鍵**再製**到 `_my/` → 點最上層填 `game_name`、`hook`，把主視覺圖拖進 `key_art`（也可以直接點裡面的字和圖改）→

@@ -187,6 +187,12 @@ const TIMELINE := "時間軸"
 - 個別零件想要不一樣的字或顏色，用原生的「主題覆寫」改（進階，不在課堂上教）；主題覆寫優先於 `UIRoot`。
 - `font` 屬於資源欄位例外：拖錯類型 Inspector 本身就不會接受；空白用預設，不需要警告。
 - 「預設」配色＝現在的樣子。
+- `style`（U191）：像素復古（原本的樣子，預設）／乾淨極簡（按鈕細外框、左右多留白）／可愛圓角（按鈕、條圓角，按鈕底邊加厚、按下變薄字往下）。
+  形狀跟顏色分開：`style` 管形狀、`palette` 管顏色，任意組合；「預設」配色配像素復古以外的風格時用中性灰（`_NEUTRAL`），不然按鈕是 Godot 原本的樣子換不了形狀。
+  底框（`Panel`／`PanelContainer`）用 `ui/styles/Panel_*.png` 灰階九宮格（24×24、四邊 8 像素），`StyleBoxTexture.modulate_color` 依配色的 panel 上色。
+  三套都用 Cubic_11（講師決定，換非像素中文字型網頁版多好幾 MB）。圓角一律關抗鋸齒，維持像素風的硬邊。
+- 統一色調 `skins/ColorGrade.tscn`（U191）：內建 `CanvasModulate`，`tone` 暖／冷／復古／夜晚 × `strength`（跟白色內插）。
+  只染遊戲畫面（CanvasLayer 的 UI 不受影響），不用 shader；放兩個以上、放在 CanvasLayer 底下時黃色驚嘆號＋中文警告。
 - `font_size` 是下拉（U188，原本是拉桿），存的值還是 12／24／36／48，舊場景照樣讀得到。
   像素字 `Cubic_11` 匯入時關掉抗鋸齒、hinting、次像素定位，專案的 `gui/theme/default_font_*` 三項也一樣，字只能放大整數倍才不會高低不齊。
 - `theme` 由欄位自動產生，不存進場景檔、Inspector 也不顯示。

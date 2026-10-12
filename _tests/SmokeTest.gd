@@ -129,6 +129,10 @@ func _run_all_steps() -> void:
 	await _test_title_screen()
 	await _assert_can_move("標題畫面測試")
 
+	# 14. 三種 UI 風格輪流套在暫停選單、過關畫面範本上；統一色調放兩個（會警告，但遊戲照常）
+	await _test_styles_and_grade()
+	await _assert_can_move("風格與統一色調測試")
+
 	if _failed:
 		print("SMOKE TEST FAILED")
 		get_tree().quit(1)
@@ -622,6 +626,34 @@ func _test_title_screen() -> void:
 		_fail("換場景前的歸零沒有清乾淨")
 	if Stats.get_value(Stats.HEALTH_KIND) != 3:
 		_fail("換場景前的歸零之後血量不是 3")
+
+# UIRoot 的三種風格 × 五套配色輪流套一次；ColorGrade 放兩個、換色調、拔掉
+func _test_styles_and_grade() -> void:
+	var roots: Array[Node] = []
+	for p in ["res://ui/templates/PauseMenuTemplate.tscn", "res://ui/templates/ClearScreenTemplate.tscn"]:
+		var r: Node = (load(p) as PackedScene).instantiate()
+		r.set_meta(HudBinding.DEFAULT_META, true)
+		add_child(r)
+		roots.append(r)
+	for style in 3:
+		for palette in 5:
+			for r in roots:
+				if is_instance_valid(r):
+					r.style = style
+					r.palette = palette
+			await _wait_frames(1)
+	var grades: Array[Node] = []
+	for i in 2:
+		var g: Node = load("res://skins/ColorGrade.tscn").instantiate()
+		add_child(g)
+		grades.append(g)
+	for tone in 4:
+		grades[0].tone = tone
+		await _wait_frames(2)
+	for n in roots + grades:
+		if is_instance_valid(n):
+			n.queue_free()
+	await _wait_frames(3)
 
 # 讓 HUD 顯示的數值變化一輪：扣血、補血、撿金幣，中間各等幾幀
 func _ui_value_round() -> void:

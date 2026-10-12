@@ -826,9 +826,14 @@
 　　　`HudData`（來源、遊玩時間、死亡次數）、`RespawnMemory`、`StatsHud`（預設 HUD、角落容器），最後放進新場景；`JuiceSwitch` 的開關、音量不歸零（是玩家的偏好）。
 　　　標題放進關卡會中文警告並自己拿掉、拖進 `UISettings` 黃色驚嘆號；標題上 Esc 不開暫停選單；`ConnectionValidator` 換場景後也檢查新場景。
 　　　暫停選單、過關畫面範本（含 W4_SkinBox 示範版）加「回標題」；範本三個（預設、`_Center` 暗色主視覺當背景、`_Side` 復古綠左文右圖），主視覺佔位圖 `ui/templates/_art/`
-- [ ] U191 `UIRoot` 加 `style`（像素復古／乾淨極簡／可愛圓角，含九宮格面板）；`ColorGrade`（統一色調，`CanvasModulate`）
+- [x] U191 `UIRoot` 加 `style`（像素復古／乾淨極簡／可愛圓角，含九宮格面板）；`ColorGrade`（統一色調，`CanvasModulate`）
 	  （驗證：`tests/ui/StylePresetTest.tscn`、`tests/ui/ColorGradeTest.tscn`）
 　　→ 講師決定：三套風格都用 Cubic 11（換非像素中文字型網頁版要多好幾 MB）
+　　→ 實作：`style` 管形狀、`palette` 管顏色。按鈕四種狀態（正常／滑過／按下／停用）本來就有，加上依風格的外框、圓角、厚底邊；
+　　　底框改用 `ui/styles/Panel_Pixel／Clean／Cute.png` 灰階九宮格依配色上色（像素復古的底框多了切角外框）；「預設」配色配其他兩種風格用中性灰。
+　　　`ColorGrade` 用 `CanvasModulate`，放兩個、放在 CanvasLayer 底下時黃色驚嘆號＋中文警告
+　　→ 順手修（講師驗收時發現）：`VolumeSlider` 的百分比原本掛在拉桿外面，不算進大小，有底框之後跑出框外。
+　　　改成 `HBoxContainer`（內部拉桿＋百分比，百分比固定留「100%」的寬），容器會照整個寬度撐開；欄位不變，既有的場景不用改
 - [ ] U190 `SkinBackground`：背景零件（只放一張／重複鋪滿／拉伸蓋滿、可選視差、自動放最底）
 	  （驗證：`tests/skins/BackgroundSkinTest.tscn`）
 　　→ 講師決定：背景鋪在整個關卡上（跟地形一樣在世界裡），預設重複鋪滿、不視差

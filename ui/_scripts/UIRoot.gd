@@ -29,6 +29,11 @@ class_name UIRoot
 	set(value):
 		palette = value
 		_apply_theme()
+## 風格：按鈕、條、底框的形狀（像素復古＝方角、乾淨極簡＝細外框、可愛圓角＝圓角加厚底邊），顏色照 palette
+@export_enum("像素復古", "乾淨極簡", "可愛圓角") var style: int = STYLE_PIXEL:
+	set(value):
+		style = value
+		_apply_theme()
 
 @export_group("標題畫面")
 ## 遊戲名稱（這一格可以打字）：填了就蓋掉範本裡 GameName 的字；空白就用範本裡原本的字
@@ -53,6 +58,23 @@ const KIND_CLEAR_SCREEN := 2
 const KIND_TITLE := 3
 
 const PALETTE_DEFAULT := 0
+
+const STYLE_PIXEL := 0
+const STYLE_CLEAN := 1
+const STYLE_CUTE := 2
+
+# 每種風格的底框九宮格圖（灰階，遊戲中依配色的 panel 顏色上色；學員可以照同樣的格子重畫）、四邊各 8 像素不拉伸
+const _PANEL_TEXTURES := [
+	preload("res://ui/styles/Panel_Pixel.png"),
+	preload("res://ui/styles/Panel_Clean.png"),
+	preload("res://ui/styles/Panel_Cute.png"),
+]
+const _PANEL_PATCH := 8
+# 每種風格底框裡面的留白（左右、上下）
+const _PANEL_MARGINS := [Vector2(12, 8), Vector2(16, 12), Vector2(14, 10)]
+# 「預設」配色選了像素復古以外的風格時用的顏色（不然按鈕會是 Godot 原本的樣子，形狀換不了）
+const _NEUTRAL := { "text": Color("f0f0f4"), "dim": Color("a0a0aa"), "panel": Color(0.06, 0.06, 0.09, 0.85),
+	"button": Color("3a3a46"), "hover": Color("4c4c5a"), "pressed": Color("2a2a34"), "accent": Color("d0d0dc"), "back": Color("1e1e26") }
 
 # 「預設」配色的選單底框：深色半透明，蓋在遊戲畫面上也看得清楚字
 const _DEFAULT_PANEL := Color(0.06, 0.06, 0.09, 0.85)
@@ -249,9 +271,16 @@ func _collect_warnings(node: Node, scene_root: Node, warnings: PackedStringArray
 		_collect_warnings(child, scene_root, warnings)
 
 # 讀目前配色裡某個角色的顏色（text、dim、panel、button、hover、pressed、accent、back），
-# 配色是「預設」時回傳 fallback；顯示零件畫自己的預設樣式時用這個
+# 配色是「預設」（而且風格是像素復古）時回傳 fallback；顯示零件畫自己的預設樣式時用這個
 func get_palette_color(role: String, fallback: Color) -> Color:
-	return _PALETTES[palette].get(role, fallback)
+	return _colors().get(role, fallback)
+
+# 現在用的這套顏色：「預設」配色配像素復古以外的風格時用中性色
+func _colors() -> Dictionary:
+	var colors: Dictionary = _PALETTES[palette]
+	if colors.is_empty() and style != STYLE_PIXEL:
+		return _NEUTRAL
+	return colors
 
 # 依欄位建一份 Theme 套在自己身上，再通知底下的零件配色換了
 func _apply_theme() -> void:
@@ -261,7 +290,7 @@ func _apply_theme() -> void:
 	if font != null:
 		t.default_font = font
 	t.default_font_size = font_size
-	var colors: Dictionary = _PALETTES[palette]
+	var colors := _colors()
 	if not colors.is_empty():
 		_add_palette(t, colors)
 	_add_panel(t, colors)
@@ -275,26 +304,30 @@ func _add_palette(t: Theme, c: Dictionary) -> void:
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		t.set_color(state, "Button", c.text)
 	t.set_color("font_disabled_color", "Button", c.dim)
-	t.set_stylebox("normal", "Button", _box(c.button))
-	t.set_stylebox("hover", "Button", _box(c.hover))
-	t.set_stylebox("pressed", "Button", _box(c.pressed))
-	t.set_stylebox("hover_pressed", "Button", _box(c.pressed))
-	t.set_stylebox("disabled", "Button", _box(c.back))
+	t.set_stylebox("normal", "Button", _button_box(c.button, c.dim, false))
+	t.set_stylebox("hover", "Button", _button_box(c.hover, c.accent, false))
+	t.set_stylebox("pressed", "Button", _button_box(c.pressed, c.accent, true))
+	t.set_stylebox("hover_pressed", "Button", _button_box(c.pressed, c.accent, true))
+	t.set_stylebox("disabled", "Button", _button_box(c.back, c.back, false))
 	t.set_stylebox("focus", "Button", _outline(c.accent))
 	t.set_color("font_color", "ProgressBar", c.text)
-	t.set_stylebox("background", "ProgressBar", _box(c.back))
-	t.set_stylebox("fill", "ProgressBar", _box(c.accent))
-	t.set_stylebox("slider", "HSlider", _box(c.back, 2))
-	t.set_stylebox("grabber_area", "HSlider", _box(c.accent, 2))
-	t.set_stylebox("grabber_area_highlight", "HSlider", _box(c.accent, 2))
+	t.set_stylebox("background", "ProgressBar", _bar_box(c.back))
+	t.set_stylebox("fill", "ProgressBar", _bar_box(c.accent))
+	t.set_stylebox("slider", "HSlider", _bar_box(c.back, 2))
+	t.set_stylebox("grabber_area", "HSlider", _bar_box(c.accent, 2))
+	t.set_stylebox("grabber_area_highlight", "HSlider", _bar_box(c.accent, 2))
 
-# 選單的底框（Panel、PanelContainer）：跟著配色換顏色，「預設」配色用深色半透明；四周留白讓字不貼邊
+# 選單的底框（Panel、PanelContainer）：用這個風格的九宮格圖，依配色上色（「預設」配色是深色半透明）；四周留白讓字不貼邊
 func _add_panel(t: Theme, c: Dictionary) -> void:
-	var box := _box(c.get("panel", _DEFAULT_PANEL))
-	box.content_margin_left = 12
-	box.content_margin_right = 12
-	box.content_margin_top = 8
-	box.content_margin_bottom = 8
+	var box := StyleBoxTexture.new()
+	box.texture = _PANEL_TEXTURES[style]
+	box.set_texture_margin_all(_PANEL_PATCH)
+	box.modulate_color = c.get("panel", _DEFAULT_PANEL)
+	var margin: Vector2 = _PANEL_MARGINS[style]
+	box.content_margin_left = margin.x
+	box.content_margin_right = margin.x
+	box.content_margin_top = margin.y
+	box.content_margin_bottom = margin.y
 	t.set_stylebox("panel", "Panel", box)
 	t.set_stylebox("panel", "PanelContainer", box)
 
@@ -316,12 +349,43 @@ func _box(color: Color, margin: int = 4) -> StyleBoxFlat:
 	box.content_margin_bottom = margin / 2.0
 	return box
 
-# 只有外框的方框，按鈕被選到（用鍵盤操作）時用
+# 按鈕的方框，形狀照風格：像素復古＝純色方角；乾淨極簡＝細外框（edge 顏色）、左右多留白；
+# 可愛圓角＝圓角、底邊加厚像按得下去的按鍵，按下時底邊變薄、字往下移
+func _button_box(color: Color, edge: Color, pressed: bool) -> StyleBoxFlat:
+	var box := _box(color)
+	match style:
+		STYLE_CLEAN:
+			box.set_border_width_all(1)
+			box.border_color = edge
+			box.content_margin_left = 8
+			box.content_margin_right = 8
+		STYLE_CUTE:
+			box.set_corner_radius_all(6)
+			box.anti_aliasing = false
+			box.border_color = color.darkened(0.35)
+			box.border_width_bottom = 1 if pressed else 3
+			box.content_margin_left = 8
+			box.content_margin_right = 8
+			box.content_margin_top = 4 if pressed else 2
+	return box
+
+# 條和拉桿的方框：可愛圓角時是圓的，其他風格方角
+func _bar_box(color: Color, margin: int = 4) -> StyleBoxFlat:
+	var box := _box(color, margin)
+	if style == STYLE_CUTE:
+		box.set_corner_radius_all(3)
+		box.anti_aliasing = false
+	return box
+
+# 只有外框的方框，按鈕被選到（用鍵盤操作）時用；可愛圓角時也是圓角
 func _outline(color: Color) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.draw_center = false
 	box.set_border_width_all(1)
 	box.border_color = color
+	if style == STYLE_CUTE:
+		box.set_corner_radius_all(6)
+		box.anti_aliasing = false
 	return box
 
 # 往下找所有零件，有 _on_ui_root_changed 的就通知它配色或字型換了（零件不用往上找根節點）
