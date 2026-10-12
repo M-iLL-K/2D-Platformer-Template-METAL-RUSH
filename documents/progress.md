@@ -764,7 +764,9 @@
 
 ## 階段 51：角色動畫
 
-- [ ] U182 `Ability_Melee`／`Ability_Ranged` 新增 `attacked` 訊號
+- [x] U182 `Ability_Melee`／`Ability_Ranged` 新增 `attacked` 訊號
+	  （驗證：`tests/abilities/AttackedSignalTest.tscn`）
+　　→ 實作：訊號放在 `AbilityBase`（所有攻擊能力共用），近戰生成判定區、遠程發射子彈的那一下發出（遠程的 `shoot()` 也算）；冷卻中按了沒反應的不發
 - [ ] U183 `Juice_Animator`（找播放器、依狀態切換、缺動畫的退路、名稱檢查、動畫改了 scale／modulate 的警告、`play_custom`）
 
 ## 階段 52：地形與收尾

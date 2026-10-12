@@ -42,7 +42,7 @@ func _on_setup() -> void:
 		player.direction_changed.connect(func(dir): _facing = dir)
 	InputRouter.bind_input(self, input_type, key, InputRouter.PRESSED, _on_attack_pressed)
 
-# 按下攻擊鍵：冷卻中不生效，否則在面向方向生成一個判定區（上一個還沒消失就先收掉）
+# 按下攻擊鍵：冷卻中不生效，否則在面向方向生成一個判定區（上一個還沒消失就先收掉）並發出 attacked
 func _on_attack_pressed() -> void:
 	if _cooldown_left > 0.0:
 		return
@@ -57,6 +57,7 @@ func _on_attack_pressed() -> void:
 	_hitbox.attacker = player
 	add_child(_hitbox)
 	_hitbox.set_texture(slash_texture)
+	attacked.emit()
 
 # 每一幀處理冷卻倒數
 func _process(delta: float) -> void:
