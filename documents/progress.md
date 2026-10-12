@@ -775,7 +775,11 @@
 
 ## 階段 52：地形與收尾
 
-- [ ] U184 `art/tile_template.png` 範本圖
+- [x] U184 `art/tile_template.png` 範本圖
+	  （驗證：`tests/skins/TileTemplateTest.tscn`）
+　　→ 講師決定：原本 32 格都是實心色票、關卡只用到 (3,1)，改成重新規劃＋自動接邊（Godot 內建 Terrain，「地面」「平台」兩種，只比四邊）：
+　　　地面 16 格（3×3 以 (3,1) 為中心，加柱子、橫條、單獨一格）、平台 4 格（單向碰撞，左端／中間／右端／單塊）、裝飾 12 格（沒有碰撞）；
+　　　(3,1) 像素不變，舊關卡看起來一樣。`blocks.png` 重畫成預設圖塊（平塗色＋邊線），另外附 `tile_template_guide.png`（放大 8 倍、中文標註）
 - [ ] U185 `W4_SkinBox` 起始場景（示範用的自訂 UI、皮、角色動畫）
 - [ ] U186 `W4_SkinPractice` 練習關（`PracticeSign` 加 W4 題目）
 - [ ] U187 煙霧測試補上 W4 項目；README、零件手冊、速查表補 W4（含 §9 課堂 SOP、背景圖做法）；跑一次煙霧測試
