@@ -126,6 +126,7 @@ static func _scale_text(s: Vector2) -> String:
 		return _num(s.x)
 	return "%s × %s" % [_num(s.x), _num(s.y)]
 
-# 數字最多兩位小數，去掉多的 0
+# 數字最多兩位小數，整數不寫小數點（2 而不是 2.0）
 static func _num(value: float) -> String:
-	return String.num(snappedf(value, 0.01))
+	var v := snappedf(value, 0.01)
+	return str(int(v)) if is_equal_approx(v, roundf(v)) else String.num(v)

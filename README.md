@@ -213,6 +213,7 @@
 | 死掉之後不會重生 | 關卡裡沒有 `RespawnHandler`，從 `blocks/` 拖一個進來 |
 | 沒有聲音 | 按 **Esc** 打開暫停選單，看主音量／音效／音樂是不是被拉到 0 |
 | 背景音樂沒播 | `Juice_BGM` 的 `music` 是空的（場景樹上有黃色驚嘆號），或兩個都勾了 `play_on_start`（只會播第一個） |
+| 走到某個地方鏡頭突然跑掉 | Room 被 Scale 縮放過（場景樹上有黃色驚嘆號）：Scale 改回 1，用 `width_in_tiles`／`height_in_tiles` 拉大小 |
 | 鏡頭不會跟著換房間 | 關卡裡沒有 `Room`，或兩個 Room 之間留了縫，對照第 5.1 節 |
 | 套了皮還是顯示色塊 | `Skin` 的 `texture_normal` 沒放圖，或 `SkinAnimated` 缺「平常」（敵人缺「走路」）動畫；名稱要一字不差，看場景樹上的黃色驚嘆號 |
 | 角色不會動、不會轉身 | 沒有拖 `Juice_Animator` 到 Player → Juice，或缺「待機」動畫；也可能按過 **0** 把 Juice 關掉了 |

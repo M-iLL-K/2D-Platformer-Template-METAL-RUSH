@@ -144,6 +144,16 @@ func _run_all_steps() -> void:
 	await _test_area_trigger()
 	await _assert_can_move("觸發區測試")
 
+	# 16c. 房間被 Scale 縮放：範圍、中心照縮放後算
+	var scaled_room: Node2D = load("res://blocks/Room.tscn").instantiate()
+	scaled_room.scale = Vector2(5, 5)
+	add_child(scaled_room)
+	await _wait_frames(2)
+	if scaled_room.get_rect().size != Vector2(2400, 1360) or not scaled_room.has_point(Vector2(2000, 1200)):
+		_fail("縮放過的房間範圍沒有照縮放後算：%s" % scaled_room.get_rect())
+	scaled_room.queue_free()
+	await _wait_frames(2)
+
 	# 17. 瞇眼測試：開著的時候照常玩、暫停中開關、拔掉
 	await _test_squint()
 	await _assert_can_move("瞇眼測試")
