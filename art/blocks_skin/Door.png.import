@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://rvmfanaymunq"
-path="res://.godot/imported/button_2.png-1de945731375b3f804a4a0ac522398f7.ctex"
+uid="uid://bgcphvxxsgtwm"
+path="res://.godot/imported/Door.png-3531af8c8d3dd87bb59e2a2860fea1ab.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://tests/skins/_art/AI_Placeholder/button_2.png"
-dest_files=["res://.godot/imported/button_2.png-1de945731375b3f804a4a0ac522398f7.ctex"]
+source_file="res://art/blocks_skin/Door.png"
+dest_files=["res://.godot/imported/Door.png-3531af8c8d3dd87bb59e2a2860fea1ab.ctex"]
 
 [params]
 

@@ -936,6 +936,12 @@
 　　→ 實作：`SkinLink.editor_hide_block()` 用 `RenderingServer.canvas_item_set_visible` 只藏畫面、不改色塊的 `visible`，存檔不會多一行；
 　　　皮每一幀判斷能不能用（Skin 有 `texture_normal`、SkinAnimated 有「平常」／敵人「走路」、皮本身看得到、沒有放錯地方或重複），
 　　　皮被刪掉、拖走時把色塊顯示回來。零件手冊 §7.1 加「色塊又冒出來＝皮有問題」
+- [x] U204 講師畫的零件圖搬到 `art/blocks_skin/` 給學員用（找不到素材時直接拖進 `Skin`）
+　　→ 講師決定：放 `art/blocks_skin/`；檔名照零件名稱（平常 `零件名.png`、狀態改變後 `零件名_active.png`，對應 `texture_normal`／`texture_active`）；
+　　　只留一份，測試場景改指向 `art/blocks_skin/`；零件手冊 §1、§7.1 加說明
+　　→ 實作：13 張（Box、Button_1／_2、Checkpoint／_active、Pickup_coin、CrumbleFloor、Door／_active、Launcher、Portal、SwitchBlock_red／_active），
+　　　`tests/skins/_art/AI_Placeholder/` 刪掉，BlockSkinTest、MoreBlockSkinTest、SkinEventTest、StyleWarningTest、W4_BadExample 改路徑
+	  （驗證：`tests/skins/BlockSkinTest.tscn`、`tests/skins/SkinEventTest.tscn`）
 
 ## 之後再做（構想，還沒排進單元）
 

@@ -10,7 +10,7 @@
 [ext_resource type="Texture2D" path="res://tests/skins/_art/PixelFrog/Traps/Falling Platforms/On (32x10).png" id="falling"]
 [ext_resource type="Texture2D" path="res://tests/skins/_art/PixelFrog/Traps/Blocks/Idle.png" id="blocks"]
 [ext_resource type="Texture2D" path="res://tests/skins/_art/PixelFrog/Traps/Trampoline/Idle.png" id="tramp"]
-[ext_resource type="Texture2D" path="res://tests/skins/_art/AI_Placeholder/portal.png" id="portal"]
+[ext_resource type="Texture2D" path="res://art/blocks_skin/Portal.png" id="portal"]
 [ext_resource type="Texture2D" path="res://tests/skins/_art/PixelFrog/Traps/Fan/On (24x8).png" id="fan_on"]
 [ext_resource type="Texture2D" path="res://tests/skins/_art/PixelFrog/Traps/Fan/Off.png" id="fan_off"]
 [ext_resource type="Texture2D" path="res://tests/skins/_art/PixelFrog/Traps/Platforms/Brown On (32x8).png" id="brown"]

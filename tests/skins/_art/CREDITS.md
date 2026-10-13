@@ -9,6 +9,7 @@
 | `Ansimuz/Foxy_Left/` | Ansimuz | 上面狐狸的跑步圖左右翻過來的版本（測試朝左畫的素材用） | 同上 |
 | `Ansimuz/tileset.png` | Ansimuz | 圖塊與物件 | 需標註作者 Ansimuz |
 | `PixelFrog/` | Pixel Frog | Pixel Adventure 1：`Background/`、`Items/`、`Terrain/`、`Traps/` | CC0 |
-| `AI_Placeholder/` | 講師 | 按鈕、門、金幣、終點、開關方塊、重生點、傳送門、箱子、崩塌地板、彈射台 | 講師自有 |
+
+講師畫的零件圖在 `art/blocks_skin/`（學員也拿得到），測試場景直接用那邊的。
 
 `Local_SkinTest.tscn` 是講師本機的測試場景，不是素材。

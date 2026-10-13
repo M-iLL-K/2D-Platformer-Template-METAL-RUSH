@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://5aqmw2483fyq"
-path="res://.godot/imported/switch_red_on.png-c2efe57378e9495bc0ac361d1b5df07c.ctex"
+uid="uid://0g5u8g215l1j"
+path="res://.godot/imported/Checkpoint_active.png-91a5d050b83bc1f5bec857f229fa6221.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://tests/skins/_art/AI_Placeholder/switch_red_on.png"
-dest_files=["res://.godot/imported/switch_red_on.png-c2efe57378e9495bc0ac361d1b5df07c.ctex"]
+source_file="res://art/blocks_skin/Checkpoint_active.png"
+dest_files=["res://.godot/imported/Checkpoint_active.png-91a5d050b83bc1f5bec857f229fa6221.ctex"]
 
 [params]
 
