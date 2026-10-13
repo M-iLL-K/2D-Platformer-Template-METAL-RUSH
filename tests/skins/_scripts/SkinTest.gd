@@ -6,6 +6,10 @@ extends Node2D
 # 印出操作說明與預期結果
 func _ready() -> void:
 	print("[測試] 編輯器：每個皮都有黃色虛線框（原本色塊 16×32 的範圍）；把 1 號的 Skin 拖遠一點，框還是畫在零件原本的位置")
+	print("[測試] 編輯器藏色塊（U203）：1、2、3、6 號看不到黃色色塊（跟 F6 一樣）；4、5 號（皮有問題）照舊顯示黃色色塊")
+	print("[測試] 　點 1 號 Skin 旁的眼睛藏起來 → 色塊出現，再點回來 → 色塊消失；把 1 號的 Skin 刪掉 → 色塊出現，Ctrl+Z → 色塊又消失")
+	print("[測試] 　拖一張圖進 5 號 Skin 的 texture_normal → 5 號色塊消失（不要存檔，Ctrl+Z 復原）")
+	print("[測試] 　存檔後用文字編輯器打開 SkinTest.tscn，Visual 節點不會多出 visible = false")
 	print("[測試] 編輯器黃色驚嘆號：")
 	print("[測試] 　4 號 SkinAnimated「缺少「平常」動畫…現在有的：「啟動」、「平」。「平」是不是要改名成「平常」？」")
 	print("[測試] 　5 號 Skin「texture_normal 是空的」；6 號第二個皮「底下已經有一個皮…」；放在場景最上層的 LostSkin「皮要放在零件…底下」")

@@ -41,6 +41,7 @@ var _play_id := 0  # 每播一段加一，讓循環的「受傷」播一輪後�
 var _state_anim := NORMAL  # 現在的狀態該播哪一段（平常或「啟動」），事件動畫播完回到這段
 var _event_id := 0  # 每播一次事件動畫加一，讓舊的「播完回去」失效
 var _in_event := false  # 正在播 SkinEvent 的動畫：這段時間狀態改變先記著，播完再換
+var _hidden_block: ColorRect = null  # 編輯器裡藏起來的零件色塊
 
 # 編輯器裡持續重畫外框、檢查動畫名稱；換一格就重新對齊（每格大小可能不一樣）
 func _ready() -> void:
@@ -49,17 +50,23 @@ func _ready() -> void:
 	animation_changed.connect(_fit)
 	_fit()
 
-# 編輯器裡每一幀重畫外框、跟著零件的大小方向重新對齊，每隔一段時間重新檢查動畫名稱
+# 編輯器裡每一幀重畫外框、動畫能用時藏起零件的色塊、跟著零件的大小方向重新對齊，每隔一段時間重新檢查動畫名稱
 func _process(delta: float) -> void:
 	queue_redraw()
+	var host := get_parent()
+	var usable := host != null and _anim_problem(SkinLink.is_enemy_host(host)) == ""
+	_hidden_block = SkinLink.editor_hide_block(self, usable, _hidden_block)
 	_fit()
 	_check_timer += delta
 	if _check_timer >= _CHECK_SECONDS:
 		_check_timer = 0.0
 		update_configuration_warnings()
 
-# 被拖到別的地方時重新檢查黃色驚嘆號、Inspector 要顯示哪些欄位
+# 被拖到別的地方時重新檢查黃色驚嘆號、Inspector 要顯示哪些欄位；被刪掉、拖走時把藏起來的色塊顯示回來
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_EXIT_TREE or what == NOTIFICATION_UNPARENTED:
+		SkinLink.editor_show_block(_hidden_block)
+		_hidden_block = null
 	if what == NOTIFICATION_PARENTED or what == NOTIFICATION_UNPARENTED:
 		update_configuration_warnings()
 		notify_property_list_changed()

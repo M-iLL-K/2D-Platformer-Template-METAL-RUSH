@@ -930,8 +930,12 @@
 　　　測試場景改用講師的圖：BlockSkinTest（重生點、開關方塊、終點；拿掉收起來的尖刺 Spike1）、SkinEventTest（箱子、終點；
 　　　按鈕沒有「啟動」圖，閃完用原本效果）、W4_BadExample（AI 圖的終點）；AttackSkinTest 拿掉圖。README §3.2、§8.3 指向手冊
 　　　（驗證：`tests/skins/BlockSkinTest.tscn`、`tests/skins/SkinEventTest.tscn`、`levels/_starts/W4_SkinBox.tscn`）
-- [ ] U203 `Skin`／`SkinAnimated` 在編輯器裡也藏起原本的色塊（只留黃色虛線框），擺的時候看到的就是遊戲裡的樣子；
+- [x] U203 `Skin`／`SkinAnimated` 在編輯器裡也藏起原本的色塊（只留黃色虛線框），擺的時候看到的就是遊戲裡的樣子；
 	  皮設定有問題（沒放圖、缺動畫）時色塊照舊顯示（講師決定，U202 時提出：透明背景的圖後面會露出色塊）
+	  （驗證：`tests/skins/SkinTest.tscn`，在編輯器裡看）
+　　→ 實作：`SkinLink.editor_hide_block()` 用 `RenderingServer.canvas_item_set_visible` 只藏畫面、不改色塊的 `visible`，存檔不會多一行；
+　　　皮每一幀判斷能不能用（Skin 有 `texture_normal`、SkinAnimated 有「平常」／敵人「走路」、皮本身看得到、沒有放錯地方或重複），
+　　　皮被刪掉、拖走時把色塊顯示回來。零件手冊 §7.1 加「色塊又冒出來＝皮有問題」
 
 ## 之後再做（構想，還沒排進單元）
 

@@ -45,23 +45,28 @@ var _shown: Texture2D = null  # 現在顯示的是哪一張（平常或狀態改
 var _tile_textures := {}  # 從圖集切出來的圖要重複鋪滿時，先轉成單張圖（圖集直接重複會鋪到整張大圖）
 var _base_flip := false  # 編輯器裡 Flip H 有沒有勾（當作「朝右」的樣子）
 var _style_timer := 0.0
+var _hidden_block: ColorRect = null  # 編輯器裡藏起來的零件色塊
 
 # 顯示平常的圖；編輯器裡持續重畫外框（零件大小改了框跟著變）
 func _ready() -> void:
 	_show(texture_normal)
 	set_process(Engine.is_editor_hint())
 
-# 編輯器裡每一幀重畫外框，並跟著零件的大小、方向重新對齊；每秒重新檢查黃色驚嘆號（縮放、Filter 改了要更新）
+# 編輯器裡每一幀重畫外框、有放圖時藏起零件的色塊，並跟著零件的大小、方向重新對齊；每秒重新檢查黃色驚嘆號（縮放、Filter 改了要更新）
 func _process(delta: float) -> void:
 	queue_redraw()
+	_hidden_block = SkinLink.editor_hide_block(self, texture_normal != null, _hidden_block)
 	_fit()
 	_style_timer += delta
 	if _style_timer >= 1.0:
 		_style_timer = 0.0
 		update_configuration_warnings()
 
-# 被拖到別的地方時重新檢查黃色驚嘆號、Inspector 要顯示哪些欄位
+# 被拖到別的地方時重新檢查黃色驚嘆號、Inspector 要顯示哪些欄位；被刪掉、拖走時把藏起來的色塊顯示回來
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_EXIT_TREE or what == NOTIFICATION_UNPARENTED:
+		SkinLink.editor_show_block(_hidden_block)
+		_hidden_block = null
 	if what == NOTIFICATION_PARENTED or what == NOTIFICATION_UNPARENTED:
 		update_configuration_warnings()
 		notify_property_list_changed()
