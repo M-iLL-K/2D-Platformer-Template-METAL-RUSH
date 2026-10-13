@@ -29,7 +29,7 @@ const _TASKS := [
 	["4. 血量改成愛心圖示", "你的 HUD 裡血條換成 HudIcons，把愛心圖拖進 full_icon"],
 	["5. 整套 UI 換字型、配色或風格", "點你的 HUD「最上層」，palette 或 style 換一個，或把字型檔拖進 font（改色塊顏色不算）"],
 	["6. 角色有待機和跑步動畫", "Visual 底下換成 AnimatedSprite2D 做站著、跑步兩段動畫，拖 Juice_Animator 進 Player → Juice，下拉選好"],
-	["7. 敵人換成會動的皮", "選 Enemy，拖 SkinAnimated 進去，做一段好幾格的「走路」動畫"],
+	["7. 敵人換成會動的皮", "選 Enemy，拖 SkinAnimated 進去，做一段好幾格的走路動畫（例如 walk），normal_animation 下拉選好"],
 	["8. 換成自己的暫停選單", "PauseMenuTemplate 再製到 _my/ 改排版，拖進 UISettings 的 pause_menu_scene"],
 	["9. 關卡加上背景", "從 skins/ 拖 SkinBackground 進關卡，把背景圖拖進 texture"],
 	["10. 整個畫面統一色調", "從 skins/ 拖 ColorGrade 進關卡，選 tone、拉 strength"],
