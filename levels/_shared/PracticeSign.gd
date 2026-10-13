@@ -28,7 +28,7 @@ const _TASKS := [
 	["3. HUD 加一個遊玩時間", "在你的 HUD 裡拖一個 HudNumber，source 選遊玩時間"],
 	["4. 血量改成愛心圖示", "你的 HUD 裡血條換成 HudIcons，把愛心圖拖進 full_icon"],
 	["5. 整套 UI 換字型、配色或風格", "點你的 HUD「最上層」，palette 或 style 換一個，或把字型檔拖進 font（改色塊顏色不算）"],
-	["6. 角色有待機和跑步動畫", "Visual 底下換成 AnimatedSprite2D 做「待機」「跑步」，拖 Juice_Animator 進 Player → Juice"],
+	["6. 角色有待機和跑步動畫", "Visual 底下換成 AnimatedSprite2D 做站著、跑步兩段動畫，拖 Juice_Animator 進 Player → Juice，下拉選好"],
 	["7. 敵人換成會動的皮", "選 Enemy，拖 SkinAnimated 進去，做一段好幾格的「走路」動畫"],
 	["8. 換成自己的暫停選單", "PauseMenuTemplate 再製到 _my/ 改排版，拖進 UISettings 的 pause_menu_scene"],
 	["9. 關卡加上背景", "從 skins/ 拖 SkinBackground 進關卡，把背景圖拖進 texture"],
@@ -88,7 +88,7 @@ func _check() -> bool:
 		10: return _custom_parts(0, ["HudNumber.gd", "HudText.gd"]).any(func(n): return n.source == _SOURCE_PLAY_TIME)
 		11: return _custom_parts(0, ["HudIcons.gd"]).any(func(n): return _is_health(n) and n.full_icon != null)
 		12: return _custom_roots(-1).any(func(r): return r.palette != 0 or r.style != 0 or r.font != null)
-		13: return not _find(juice, "Juice_Animator").is_empty() and _player_has_anims(["待機", "跑步"])
+		13: return _find(juice, "Juice_Animator").any(func(a): return a.resolved_animation("idle") != "" and a.resolved_animation("run") != "")
 		14: return _enemy_walks()
 		15: return not _custom_roots(1).is_empty()
 		16: return get_tree().get_nodes_in_group("skin_background").any(func(n): return n.texture != null)
@@ -164,18 +164,6 @@ func _in_top_right(part: Control) -> bool:
 	var screen := get_viewport().get_visible_rect().size
 	var center := part.get_global_rect().get_center()
 	return center.x > screen.x / 2.0 and center.y < screen.y / 2.0
-
-# 角色的播放器（Visual 底下的 AnimationPlayer 或 AnimatedSprite2D）有沒有這些動畫
-func _player_has_anims(names: Array) -> bool:
-	var player := get_tree().get_first_node_in_group("player")
-	if player == null or player.visual == null:
-		return false
-	for n in player.visual.find_children("*", "", true, false):
-		if n is AnimationPlayer and names.all(func(a): return n.has_animation(a)):
-			return true
-		if n is AnimatedSprite2D and n.sprite_frames != null and names.all(func(a): return n.sprite_frames.has_animation(a)):
-			return true
-	return false
 
 # 有沒有敵人套上會動的皮（SkinAnimated 的「走路」有兩格以上）
 func _enemy_walks() -> bool:

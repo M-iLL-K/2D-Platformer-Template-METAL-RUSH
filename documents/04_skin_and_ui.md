@@ -339,7 +339,8 @@ const TIMELINE := "時間軸"
   `Visual` 的子節點上（`AnimatedSprite2D` 本身就是子節點），也不衝突。`AnimationPlayer` 動畫裡如果改了 `scale`／`modulate`，
   會跟 Juice 打架：文件提醒「動畫只改 frame（第幾格），不要改大小和顏色」，並在編輯器檢查動畫軌道，有改就黃色驚嘆號。
 - 地基需要：`Ability_Melee`、`Ability_Ranged` 新增 `attacked` 訊號（揮擊／射擊那一下發出），`PlayerAnimator` 自己找到並聽它，不用學員連。
-- 檢查動畫名稱時跟 §6.2 一樣：列出現有的名稱、附近似名稱建議（例如「跑」→「跑步」）。
+- U214：動畫名稱改成每個狀態一格下拉（`idle_animation`…，選項是（自動）、（沒有）＋現有的動畫），（自動）認常見的中英文名字，舊場景的中文名字照樣對上。
+  加一次型動畫（落地、轉向、重生、撞牆、撞天花板、開始移動，預設（沒有））、`can_interrupt`、`min_run_speed`、`run_speed_follow`；選的動畫不見了黃色驚嘆號＋中文警告。
 - 轉向翻面（講師決定，U183）：`follow_facing`（預設勾），翻 Visual 底下圖的 Flip H，以編輯器裡勾好的 Flip H 當朝右；
   自動奔跑卡已經翻 Visual 時不再翻一次。Juice 總開關關掉時停在待機、不翻面。
 

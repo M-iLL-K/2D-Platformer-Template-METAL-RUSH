@@ -86,8 +86,8 @@
 點「開始遊戲」按鈕，在 `level` 下拉選自己的關卡 → 在 `_my/` 裡的標題上按右鍵 **設為主場景**。
 按 **F5** 就從標題開始；過關畫面、暫停選單的「回標題」會自動出現。標題畫面不要拖進關卡，它自己就是一個場景。
 
-**換角色**：Player → Visual 底下的 `Sprite2D` 換成 `AnimatedSprite2D`，在 Sprite Frames 做「待機」「跑步」「跳起」「落下」
-（還可以做「受傷」「死亡」「攻擊」）→ 從 `juice/` 拖 `Juice_Animator` 到 **Player → Juice**。圖朝左畫的，在 `AnimatedSprite2D` 勾 **Flip H**。
+**換角色**：Player → Visual 底下的 `Sprite2D` 換成 `AnimatedSprite2D`，在 Sprite Frames 做站著、跑步、跳起、落下的動畫
+（名字隨便取，取 idle、run 這類常見名字會自動對上）→ 從 `juice/` 拖 `Juice_Animator` 到 **Player → Juice**，每個狀態在下拉選播哪段。圖朝左畫的，在 `AnimatedSprite2D` 勾 **Flip H**。
 
 **換地形**：`art/default_tile.tres` 右鍵再製到 `_my/` → 照 `art/tile_template.png` 的格子畫自己的圖（每格 16×16，
 放大版說明看 `art/tile_template_guide.png`）→ 點再製的圖塊集，把圖拖進去取代原本的圖片 → 關卡的 `TileMapLayer` 換成自己的圖塊集。
@@ -230,7 +230,7 @@
 | 走到某個地方鏡頭突然跑掉 | Room 被 Scale 縮放過（場景樹上有黃色驚嘆號）：Scale 改回 1，用 `width_in_tiles`／`height_in_tiles` 拉大小 |
 | 鏡頭不會跟著換房間 | 關卡裡沒有 `Room`，或兩個 Room 之間留了縫，對照第 5.1 節 |
 | 套了皮還是顯示色塊 | `Skin` 的 `texture_normal` 沒放圖，或 `SkinAnimated` 缺「平常」（敵人缺「走路」）動畫；名稱要一字不差，看場景樹上的黃色驚嘆號 |
-| 角色不會動、不會轉身 | 沒有拖 `Juice_Animator` 到 Player → Juice，或缺「待機」動畫；也可能按過 **0** 把 Juice 關掉了 |
+| 角色不會動、不會轉身 | 沒有拖 `Juice_Animator` 到 Player → Juice，或 `idle_animation` 沒選到動畫；也可能按過 **0** 把 Juice 關掉了 |
 | 角色倒著跑 | 圖是朝左畫的：在 Visual 底下的 `AnimatedSprite2D` 勾 **Flip H**（敵人的皮也一樣） |
 | 自己的 HUD 沒出現 | HUD 要拖進關卡（或放進 `UISettings` 的 `hud_scene`）；同一種畫面只能放一個 |
 | 地形邊緣接不起來 | 用的是一般筆刷，改到圖塊面板的「地形」分頁選「地面」再刷 |
