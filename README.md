@@ -74,7 +74,7 @@
 **換零件外觀**：在關卡裡點選零件（終點、門、敵人、金幣…）→ 從 `skins/` 拖 `Skin` 進去當它的子節點 → 把圖拖進 `texture_normal`。
 - 黃色虛線框是原本色塊的範圍，碰撞不會跟著圖變，圖要畫在框裡（可以直接拖動 `Skin` 對位置）
 - 狀態改變後的樣子（門打開、按鈕亮起、終點踩到…）拖進 `texture_active`；沒放就用平常的圖變色
-- 要動畫：拖 `SkinAnimated`，在 Sprite Frames 做「平常」（敵人做「走路」），想要狀態改變後的動畫就加「啟動」
+- 要動畫：拖 `SkinAnimated`，在 Sprite Frames 做動畫（名字隨便取），在「動畫」群組下拉選平常（敵人是走路）、狀態改變後各播哪段；取 idle、walk、active 這類常見名字會自動對上
 
 **換 HUD**：`ui/templates/HudTemplate.tscn` 按右鍵 **再製**（Duplicate）→ 存到 `_my/` → 打開改（拖位置、換圖、加零件選數值）→ 把它拖進關卡。
 **換暫停選單／過關畫面**：`PauseMenuTemplate`、`ClearScreenTemplate` 一樣再製到 `_my/` 改好，拖進關卡裡 `UISettings` 的欄位
@@ -229,7 +229,7 @@
 | 背景音樂沒播 | `Juice_BGM` 的 `music` 是空的（場景樹上有黃色驚嘆號），或兩個都勾了 `play_on_start`（只會播第一個） |
 | 走到某個地方鏡頭突然跑掉 | Room 被 Scale 縮放過（場景樹上有黃色驚嘆號）：Scale 改回 1，用 `width_in_tiles`／`height_in_tiles` 拉大小 |
 | 鏡頭不會跟著換房間 | 關卡裡沒有 `Room`，或兩個 Room 之間留了縫，對照第 5.1 節 |
-| 套了皮還是顯示色塊 | `Skin` 的 `texture_normal` 沒放圖，或 `SkinAnimated` 缺「平常」（敵人缺「走路」）動畫；名稱要一字不差，看場景樹上的黃色驚嘆號 |
+| 套了皮還是顯示色塊 | `Skin` 的 `texture_normal` 沒放圖，或 `SkinAnimated` 的 `normal_animation` 沒選到動畫；看場景樹上的黃色驚嘆號 |
 | 角色不會動、不會轉身 | 沒有拖 `Juice_Animator` 到 Player → Juice，或 `idle_animation` 沒選到動畫；也可能按過 **0** 把 Juice 關掉了 |
 | 角色倒著跑 | 圖是朝左畫的：在 Visual 底下的 `AnimatedSprite2D` 勾 **Flip H**（敵人的皮也一樣） |
 | 自己的 HUD 沒出現 | HUD 要拖進關卡（或放進 `UISettings` 的 `hud_scene`）；同一種畫面只能放一個 |

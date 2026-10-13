@@ -1008,7 +1008,12 @@
 　　　（自動）的常見名字含 default（SpriteFrames 預設那段當待機）、跑（AnimatorPlayerTest 原本「故意打錯」的跑現在會認出來，說明一起改）。
 　　　拿掉「名稱打錯」的警告，改成「選的動畫不見了」；告示牌第 6 題改成看 `resolved_animation("idle"／"run")`。
 　　　手冊 §7.3／§8、速查表、README、講師版解答、規格一起改
-- [ ] U215 `SkinAnimated` 動畫改成下拉選（平常、啟動、走路、受傷、死亡），（自動）認常見中英文名字
+- [x] U215 `SkinAnimated` 動畫改成下拉選（平常、啟動、走路、受傷、死亡），（自動）認常見中英文名字
+	  （驗證：`tests/skins/SkinTest.tscn`、`tests/skins/EnemySkinTest.tscn`）
+　　→ 實作：「動畫」群組 `normal_animation`、`active_animation`（一般零件）／`hurt_animation`、`die_animation`（敵人），看零件種類只顯示用得到的；
+　　　平常／啟動／走路／受傷／死亡留著當零件呼叫用的代號，`resolved_animation()` 轉成實際名稱，`Enemy` 不用改；舊場景的中文名字照樣對上。
+　　　缺平常（走路）時的提醒附「是不是要選…」；選的動畫不見了黃色驚嘆號。SkinEvent 預設動畫改成避開實際的平常、啟動。
+　　→ 順手修：SkinEvent 聽沒有參數的事件時 `unbind(0)` 報錯（SkinEventTest 的「unbind() arguments must be 1 or greater」，U180b 起就有）
 ## 之後再做（構想，還沒排進單元）
 
 - 手機觸控按鈕：拖進關卡的虛擬按鈕組件，下拉選它代表哪個動作，只在觸控裝置上顯示（講師決定先放待做，U201 時提出）

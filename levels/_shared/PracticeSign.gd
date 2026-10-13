@@ -104,7 +104,7 @@ func _goal_has_skin() -> bool:
 		for child in goal.get_children():
 			if _script_file(child) == "Skin.gd" and child.texture_normal != null:
 				return true
-			if _script_file(child) == "SkinAnimated.gd" and child.sprite_frames != null and child.sprite_frames.has_animation("平常"):
+			if _script_file(child) == "SkinAnimated.gd" and child.resolved_animation("平常") != "":
 				return true
 	return false
 
@@ -169,7 +169,8 @@ func _in_top_right(part: Control) -> bool:
 func _enemy_walks() -> bool:
 	for enemy in get_tree().get_nodes_in_group("enemy"):
 		for child in enemy.get_children():
-			if _script_file(child) == "SkinAnimated.gd" and child.sprite_frames != null 					and child.sprite_frames.has_animation("走路") and child.sprite_frames.get_frame_count("走路") > 1:
+			if _script_file(child) == "SkinAnimated.gd" and child.resolved_animation("走路") != "" \
+					and child.sprite_frames.get_frame_count(child.resolved_animation("走路")) > 1:
 				return true
 	return false
 

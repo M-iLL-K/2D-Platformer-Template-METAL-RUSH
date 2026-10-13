@@ -294,6 +294,8 @@ const TIMELINE := "時間軸"
   - 一般零件：「平常」「啟動」（啟動＝狀態改變後，同 `texture_active` 的時機）
   - 敵人：「走路」「受傷」「死亡」（沒有「受傷」「死亡」就繼續播「走路」）
 - 缺「平常」（或敵人缺「走路」）→ 黃色驚嘆號，列出現有的動畫名稱並附近似名稱建議（`NameCheck`）。
+- U215：名稱改成「動畫」群組下拉（`normal_animation`、`active_animation`；敵人 `normal_animation`、`hurt_animation`、`die_animation`），
+  選項（自動）、（沒有）＋現有的動畫，（自動）認常見中英文名字；平常／啟動／走路／受傷／死亡留著當零件呼叫用的代號（`resolved_animation()` 轉成實際名稱）。
 - `follow_facing`、`active_style`、`follow_direction` 同 `Skin`（沒有「啟動」動畫時一律用原本效果）。
 - `fill_style` 只有「只放一張」「拉伸蓋滿」（動畫做不到重複鋪滿）。
 - 零件發生的事件（彈出、傳送、碎掉…）要播動畫：U180b `SkinEvent`，學員自己選「什麼時候 → 播哪段」，不寫死動畫名稱。
