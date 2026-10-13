@@ -908,3 +908,6 @@
 - GameFlow 加上狀態：管理「開始 → 進行中 → 過關／Game Over」，學員可以聽狀態變化的訊號；
   可能一起做命數、Game Over 條件（命用完或某個數值歸零）與 Game Over 畫面，會牽涉 RespawnHandler、ClearScreen。
   U156 的訊號名稱不用變，學員已經連好的線不用重連。
+- [x] U200 忽大忽小卡的體型連動倍率改成拉桿：`@export_group("體型連動")` 加 `big_jump`／`small_jump`／`big_push`／`big_knockback`／`small_knockback`，
+	  預設值＝原本寫死的 0.7／1.3／1.6／0.6／1.6，既有場景手感不變（驗證：`tests/mechanics/Mechanic_SizeShiftTest.tscn`）
+　　→ 講師決定：跳躍、推力、擊退全開給學員調；彈彈的殼彈起來的高度維持不變，不跟體型連動
