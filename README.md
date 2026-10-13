@@ -75,11 +75,17 @@
 - 黃色虛線框是原本色塊的範圍，碰撞不會跟著圖變，圖要畫在框裡（可以直接拖動 `Skin` 對位置）
 - 狀態改變後的樣子（門打開、按鈕亮起、終點踩到…）拖進 `texture_active`；沒放就用平常的圖變色
 - 要動畫：拖 `SkinAnimated`，在 Sprite Frames 做動畫（名字隨便取），在「動畫」群組下拉選平常（敵人是走路）、狀態改變後各播哪段；取 idle、walk、active 這類常見名字會自動對上
+- 找不到零件的圖：`art/blocks_skin/` 有講師畫的，檔名就是零件名稱（`Door.png` 放 `texture_normal`、`Door_active.png` 放 `texture_active`）
+- 想讓別的東西觸發換圖（例如按按鈕讓終點的旗子升起）：按鈕的訊號連到皮的 `show_active`；兩張以上的圖放 `more_textures`，連 `next_look` 一張一張換
 
 **換 HUD**：`ui/templates/HudTemplate.tscn` 按右鍵 **再製**（Duplicate）→ 存到 `_my/` → 打開改（拖位置、換圖、加零件選數值）→ 把它拖進關卡。
+範本裡的 `Panel` 是底框，血條金幣都在裡面；要搬到右上角就選 `Panel`，Layout 的 Anchors Preset 選右上。字還是看不清楚的話，最上層的 `hud_background` 選「字加外框」（預設就是）。
 **換暫停選單／過關畫面**：`PauseMenuTemplate`、`ClearScreenTemplate` 一樣再製到 `_my/` 改好，拖進關卡裡 `UISettings` 的欄位
-（關卡沒有 `UISettings` 的話從 `blocks/` 拖一個）。整套字型、配色、風格：點畫面最上層，改 `font`、`font_size`、`palette`、`style`。
+（關卡沒有 `UISettings` 的話從 `blocks/` 拖一個）。整套字型、配色、風格：點畫面最上層，改 `font`、`font_size`、`palette`（10 套；選最後的「自訂」會出現 4 個取色器，自己配）、`style`（7 種：像素復古、乾淨極簡、可愛圓角、木牌、科幻、漫畫、復古遊戲機）。
 素材顏色兜不起來：從 `skins/` 拖 `ColorGrade` 進關卡，選色調、拉強度，整個畫面就會統一成同一種氣氛。
+
+**加背景**：從 `skins/` 拖 `SkinBackground` 進關卡，圖拖進 `texture`。`cover_area` 決定蓋多大：整個關卡（預設）、所在的房間（把背景拖到某個 Room 底下，每個房間可以不一樣）、自己拉範圍。
+範圍小的會自動蓋在上面，所以「整個關卡一張＋某個房間換一張」直接放就好。
 
 **做標題畫面**：`ui/templates/` 裡三個標題範本（`TitleScreenTemplate` 上中下三段、`_Center` 主視覺當背景、`_Side` 左文右圖）挑一個
 右鍵**再製**到 `_my/` → 點最上層填 `game_name`、`hook`，把主視覺圖拖進 `key_art`（也可以直接點裡面的字和圖改）→
@@ -87,7 +93,8 @@
 按 **F5** 就從標題開始；過關畫面、暫停選單的「回標題」會自動出現。標題畫面不要拖進關卡，它自己就是一個場景。
 
 **換角色**：Player → Visual 底下的 `Sprite2D` 換成 `AnimatedSprite2D`，在 Sprite Frames 做站著、跑步、跳起、落下的動畫
-（名字隨便取，取 idle、run 這類常見名字會自動對上）→ 從 `juice/` 拖 `Juice_Animator` 到 **Player → Juice**，每個狀態在下拉選播哪段。圖朝左畫的，在 `AnimatedSprite2D` 勾 **Flip H**。
+（名字隨便取，取 idle、run 這類常見名字會自動對上）→ 從 `juice/` 拖 `Juice_Animator` 到 **Player → Juice**，每個狀態在下拉選播哪段。
+還可以選落地、轉向、撞牆這類一次型動畫，調跑多快才算跑步，見 `零件手冊.md` §7.3。圖朝左畫的，在 `AnimatedSprite2D` 勾 **Flip H**。
 
 **換地形**：`art/default_tile.tres` 右鍵再製到 `_my/` → 照 `art/tile_template.png` 的格子畫自己的圖（每格 16×16，
 放大版說明看 `art/tile_template_guide.png`）→ 點再製的圖塊集，把圖拖進去取代原本的圖片 → 關卡的 `TileMapLayer` 換成自己的圖塊集。
