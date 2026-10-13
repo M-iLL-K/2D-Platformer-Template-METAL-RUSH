@@ -942,6 +942,15 @@
 　　→ 實作：13 張（Box、Button_1／_2、Checkpoint／_active、Pickup_coin、CrumbleFloor、Door／_active、Launcher、Portal、SwitchBlock_red／_active），
 　　　`tests/skins/_art/AI_Placeholder/` 刪掉，BlockSkinTest、MoreBlockSkinTest、SkinEventTest、StyleWarningTest、W4_BadExample 改路徑
 	  （驗證：`tests/skins/BlockSkinTest.tscn`、`tests/skins/SkinEventTest.tscn`）
+- [x] U205 `W4_SkinBox` 補上階段 53 之後的示範：標題畫面、背景、選單風格與統一色調、講師的零件圖
+　　→ 講師決定（U204 後盤點）：W4 起始場景沒跟上 U188～U204，四樣都補；練習關另開 U206，新功能每種都碰一下
+　　→ 實作：示範標題 `_W4SkinBox/ui/TitleDemo.tscn`（從 TitleScreenTemplate 再製，填 game_name／key_art（狐狸第一格）／hook，
+　　　糖果配色＋可愛圓角，「開始遊戲」→ W4_SkinBox）；`SkinBackground`（Pixel Frog 藍格子，複製到 `_W4SkinBox/art/PixelFrog/background.png`，視差）；
+　　　`ColorGrade` 暖色 0.2；HUD 可愛圓角、暫停選單乾淨極簡、過關畫面像素復古（三種 style 各示範一次）；
+　　　金幣改用 `art/blocks_skin/Pickup_coin.png`（12×12 剛好是金幣大小，HUD 圖示一起換），加一個重生點套 `Checkpoint`／`Checkpoint_active`。
+　　　主場景沒改（還是 `_Template`），所以示範選單的「回標題」照規則藏起來
+	  （驗證：`levels/_starts/W4_SkinBox.tscn`、`levels/_starts/_W4SkinBox/ui/TitleDemo.tscn`）
+- [ ] U206 `W4_SkinPractice` 題目補上新功能（標題畫面、背景、風格、色調、瞇眼測試、講師零件圖），每種都碰一下
 
 ## 之後再做（構想，還沒排進單元）
 

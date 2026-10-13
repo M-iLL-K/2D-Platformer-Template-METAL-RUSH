@@ -65,7 +65,8 @@
 
 ### 3.2 W4：套皮與 UI
 
-1. **先看換完長什麼樣子**：打開 `levels/_starts/W4_SkinBox.tscn` → 按 **F6**（HUD、暫停選單、過關畫面、零件、角色都換過了）
+1. **先看換完長什麼樣子**：打開 `levels/_starts/W4_SkinBox.tscn` → 按 **F6**（HUD、暫停選單、過關畫面、零件、角色、背景都換過了）；
+   標題畫面打開 `levels/_starts/_W4SkinBox/ui/TitleDemo.tscn` → 按 **F6** → 按「開始遊戲」
 2. 回到自己的關卡（W4 才加入的話，把 `W4_SkinBox` 或 `W3_JuiceBox` 另存到 `_my/`）
 3. 自己的圖片、字型都放在 `_my/` 底下（例如 `_my/art/`）
 4. **用了別人的素材要記下來**：寫在 `_my/CREDITS.txt`，格式和授權怎麼看 → `零件手冊.md` §7
