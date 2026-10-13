@@ -710,10 +710,12 @@ func _test_background() -> void:
 	placed.append(under_player)
 	for fill in 3:
 		for par in [false, true]:
-			for bg in placed:
-				bg.fill_style = fill
-				bg.parallax = par
-			await _wait_frames(2)
+			for cover in 3:
+				for bg in placed:
+					bg.fill_style = fill
+					bg.parallax = par
+					bg.cover_area = cover
+				await _wait_frames(2)
 	for bg in placed:
 		bg.queue_free()
 	await _wait_frames(3)
