@@ -1,6 +1,7 @@
 # 產生 UI 風格的底框九宮格圖（ui/styles/Panel_*.png）：24×24 灰階，四邊各 8 像素不拉伸，遊戲中依配色上色。
 # 灰階越亮，上色後越接近配色的 panel 顏色；255 就是 panel 顏色本身，0 是黑色。
 # U211 加的四種：木牌、科幻、漫畫、復古遊戲機（像素復古、乾淨極簡、可愛圓角是 U191 畫的，不在這裡重畫）。
+# U212：每種風格（漫畫除外，它本來就是黑框）再畫一張外框圖 Outline_*.png。
 # 用法：在專案根目錄執行 python tools/generate_ui_panels.py（需要 Pillow）
 
 from PIL import Image
@@ -87,8 +88,27 @@ def retro():
     return im
 
 
+# 外框圖：底框形狀最外面一圈（不透明、而且旁邊是透明或圖的邊）畫成白色，其他透明；遊戲中依配色的 accent 上色疊在底框上
+def outline_of(panel):
+    im = blank()
+    src = panel.convert("RGBA")
+    for y in range(SIZE):
+        for x in range(SIZE):
+            if src.getpixel((x, y))[3] == 0:
+                continue
+            for nx, ny in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
+                if not (0 <= nx < SIZE and 0 <= ny < SIZE) or src.getpixel((nx, ny))[3] == 0:
+                    put(im, x, y, 255)
+                    break
+    return im
+
+
 if __name__ == "__main__":
     for name, make in [("Wood", wood), ("SciFi", scifi), ("Comic", comic), ("Retro", retro)]:
         path = "ui/styles/Panel_%s.png" % name
         make().save(path)
+        print("寫入", path)
+    for name in ["Pixel", "Clean", "Cute", "Wood", "SciFi", "Retro"]:
+        path = "ui/styles/Outline_%s.png" % name
+        outline_of(Image.open("ui/styles/Panel_%s.png" % name)).save(path)
         print("寫入", path)

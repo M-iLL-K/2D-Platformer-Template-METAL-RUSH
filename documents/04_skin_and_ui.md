@@ -192,7 +192,9 @@ const TIMELINE := "時間軸"
   底框（`Panel`／`PanelContainer`）用 `ui/styles/Panel_*.png` 灰階九宮格（24×24、四邊 8 像素），`StyleBoxTexture.modulate_color` 依配色的 panel 上色。
 - U211 加 `style`：木牌（木紋底框重複鋪、四角釘子；按鈕小圓角、底邊厚）／科幻（切角亮線底框；按鈕左邊 3 像素亮線，滑過變 accent）／
   漫畫（2 像素黑框＋右下 2 像素硬陰影；按鈕黑框、右下邊加粗當陰影，按下去變薄、字往右下）／復古遊戲機（雙線底框；按鈕左邊 4 像素粗線，滑過變 accent）。
-  加 `palette`：海洋／森林／夕陽／黑白／萬聖節。新選項都接在最後，既有場景存的編號不變。底框圖由 `tools/generate_ui_panels.py` 產生（程式畫的幾何框）。
+  加 `palette`：海洋／森林／夕陽／黑白／萬聖節。
+  U212：底框外圈疊一圈配色 accent 的外框（`PanelBox`：底框 `StyleBoxTexture`＋外框 `StyleBoxTexture`，外框圖 `Outline_*.png` 是底框形狀最外一圈），漫畫維持黑框。
+ 新選項都接在最後，既有場景存的編號不變。底框圖由 `tools/generate_ui_panels.py` 產生（程式畫的幾何框）。
 - HUD 底框（U210）：`HudTemplate` 的 `Rows` 包在 `Panel`（`PanelContainer`）裡，跟暫停選單同一個九宮格底框。預設 HUD（`StatsHud`）沒有任何一列要顯示時藏起底框。
 - `hud_background`（U210，只有 HUD 顯示）：無／字加外框（預設，Label、Button、ProgressBar 描 2 像素邊，字亮描深、字暗描淺）。學員已經再製的 HUD 也會套到預設的字加外框。
   三套都用 Cubic_11（講師決定，換非像素中文字型網頁版多好幾 MB）。圓角一律關抗鋸齒，維持像素風的硬邊。

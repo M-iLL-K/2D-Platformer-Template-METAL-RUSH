@@ -90,6 +90,16 @@ const _PANEL_TEXTURES := [
 	preload("res://ui/styles/Panel_Comic.png"),
 	preload("res://ui/styles/Panel_Retro.png"),
 ]
+# 每種風格底框最外圈的外框圖（白色，遊戲中依配色的 accent 上色）；漫畫本來就是黑框，不另外加
+const _OUTLINE_TEXTURES := [
+	preload("res://ui/styles/Outline_Pixel.png"),
+	preload("res://ui/styles/Outline_Clean.png"),
+	preload("res://ui/styles/Outline_Cute.png"),
+	preload("res://ui/styles/Outline_Wood.png"),
+	preload("res://ui/styles/Outline_SciFi.png"),
+	null,
+	preload("res://ui/styles/Outline_Retro.png"),
+]
 const _PANEL_PATCH := 8
 # 每種風格底框裡面的留白（左右、上下）
 const _PANEL_MARGINS := [Vector2(12, 8), Vector2(16, 12), Vector2(14, 10), Vector2(12, 10), Vector2(14, 10), Vector2(12, 10), Vector2(14, 12)]
@@ -362,15 +372,25 @@ func _add_palette(t: Theme, c: Dictionary) -> void:
 	t.set_stylebox("grabber_area", "HSlider", _bar_box(c.accent, 2))
 	t.set_stylebox("grabber_area_highlight", "HSlider", _bar_box(c.accent, 2))
 
-# 選單的底框（Panel、PanelContainer）：用這個風格的九宮格圖，依配色上色（「預設」配色是深色半透明）；四周留白讓字不貼邊
+# 選單的底框（Panel、PanelContainer）：用這個風格的九宮格圖，依配色上色（「預設」配色是深色半透明），
+# 最外圈再疊一圈 accent 顏色的外框；四周留白讓字不貼邊
 func _add_panel(t: Theme, c: Dictionary) -> void:
-	var box := StyleBoxTexture.new()
-	box.texture = _PANEL_TEXTURES[style]
-	box.set_texture_margin_all(_PANEL_PATCH)
+	var fill := StyleBoxTexture.new()
+	fill.texture = _PANEL_TEXTURES[style]
+	fill.set_texture_margin_all(_PANEL_PATCH)
 	if style == STYLE_WOOD:
-		box.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
-		box.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
-	box.modulate_color = c.get("panel", _DEFAULT_PANEL)
+		fill.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
+		fill.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
+	fill.modulate_color = c.get("panel", _DEFAULT_PANEL)
+	var box := PanelBox.new()
+	box.fill = fill
+	if _OUTLINE_TEXTURES[style] != null:
+		var outline := StyleBoxTexture.new()
+		outline.texture = _OUTLINE_TEXTURES[style]
+		outline.set_texture_margin_all(_PANEL_PATCH)
+		outline.draw_center = false
+		outline.modulate_color = c.get("accent", _NEUTRAL.accent)
+		box.outline = outline
 	var margin: Vector2 = _PANEL_MARGINS[style]
 	box.content_margin_left = margin.x
 	box.content_margin_right = margin.x
