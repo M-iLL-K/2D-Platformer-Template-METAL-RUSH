@@ -26,12 +26,13 @@ class_name UIRoot
 		font_size = value
 		_apply_theme()
 ## 配色：字、底色、按鈕、條的顏色一起換
-@export_enum("預設", "暗色", "亮色", "復古綠", "糖果") var palette: int = PALETTE_DEFAULT:
+@export_enum("預設", "暗色", "亮色", "復古綠", "糖果", "海洋", "森林", "夕陽", "黑白", "萬聖節") var palette: int = PALETTE_DEFAULT:
 	set(value):
 		palette = value
 		_apply_theme()
-## 風格：按鈕、條、底框的形狀（像素復古＝方角、乾淨極簡＝細外框、可愛圓角＝圓角加厚底邊），顏色照 palette
-@export_enum("像素復古", "乾淨極簡", "可愛圓角") var style: int = STYLE_PIXEL:
+## 風格：按鈕、條、底框的形狀（像素復古＝方角、乾淨極簡＝細外框、可愛圓角＝圓角加厚底邊、木牌＝木紋加釘子、
+## 科幻＝切角亮線、漫畫＝粗黑框加硬陰影、復古遊戲機＝雙線框），顏色照 palette
+@export_enum("像素復古", "乾淨極簡", "可愛圓角", "木牌", "科幻", "漫畫", "復古遊戲機") var style: int = STYLE_PIXEL:
 	set(value):
 		style = value
 		_apply_theme()
@@ -74,16 +75,26 @@ const _OUTLINE_SIZE := 2
 const STYLE_PIXEL := 0
 const STYLE_CLEAN := 1
 const STYLE_CUTE := 2
+const STYLE_WOOD := 3
+const STYLE_SCIFI := 4
+const STYLE_COMIC := 5
+const STYLE_RETRO := 6
 
 # 每種風格的底框九宮格圖（灰階，遊戲中依配色的 panel 顏色上色；學員可以照同樣的格子重畫）、四邊各 8 像素不拉伸
 const _PANEL_TEXTURES := [
 	preload("res://ui/styles/Panel_Pixel.png"),
 	preload("res://ui/styles/Panel_Clean.png"),
 	preload("res://ui/styles/Panel_Cute.png"),
+	preload("res://ui/styles/Panel_Wood.png"),
+	preload("res://ui/styles/Panel_SciFi.png"),
+	preload("res://ui/styles/Panel_Comic.png"),
+	preload("res://ui/styles/Panel_Retro.png"),
 ]
 const _PANEL_PATCH := 8
 # 每種風格底框裡面的留白（左右、上下）
-const _PANEL_MARGINS := [Vector2(12, 8), Vector2(16, 12), Vector2(14, 10)]
+const _PANEL_MARGINS := [Vector2(12, 8), Vector2(16, 12), Vector2(14, 10), Vector2(12, 10), Vector2(14, 10), Vector2(12, 10), Vector2(14, 12)]
+# 漫畫風格的黑框、硬陰影顏色（不跟配色變）
+const _INK := Color(0.08, 0.08, 0.1)
 # 「預設」配色選了像素復古以外的風格時用的顏色（不然按鈕會是 Godot 原本的樣子，形狀換不了）
 const _NEUTRAL := { "text": Color("f0f0f4"), "dim": Color("a0a0aa"), "panel": Color(0.06, 0.06, 0.09, 0.85),
 	"button": Color("3a3a46"), "hover": Color("4c4c5a"), "pressed": Color("2a2a34"), "accent": Color("d0d0dc"), "back": Color("1e1e26") }
@@ -113,6 +124,16 @@ const _PALETTES := [
 		"hover": Color("2c5c2e"), "pressed": Color("153016"), "accent": Color("8ce060"), "back": Color("0a180b") },
 	{ "text": Color("5a2a4a"), "dim": Color("9a6a88"), "panel": Color("fff0f6e6"), "button": Color("ffc8e0"),
 		"hover": Color("ffb0d2"), "pressed": Color("f598c0"), "accent": Color("ff6fae"), "back": Color("ffe0ee") },
+	{ "text": Color("e6f6ff"), "dim": Color("8ab8d4"), "panel": Color("0e3550e6"), "button": Color("17507a"),
+		"hover": Color("1f6a9e"), "pressed": Color("103c5c"), "accent": Color("4fd2e8"), "back": Color("0a2436") },
+	{ "text": Color("f2ecd2"), "dim": Color("a8b08a"), "panel": Color("23361ee6"), "button": Color("3a5a2e"),
+		"hover": Color("4c7240"), "pressed": Color("2c4424"), "accent": Color("d8b44a"), "back": Color("18240f") },
+	{ "text": Color("3a1e2a"), "dim": Color("8a5a5a"), "panel": Color("ffd8b0e6"), "button": Color("ffb27a"),
+		"hover": Color("ff9a62"), "pressed": Color("e8844e"), "accent": Color("e0405a"), "back": Color("f0c098") },
+	{ "text": Color("f4f4f4"), "dim": Color("9a9a9a"), "panel": Color("101010e6"), "button": Color("3a3a3a"),
+		"hover": Color("5a5a5a"), "pressed": Color("242424"), "accent": Color("ffffff"), "back": Color("000000") },
+	{ "text": Color("ffd9a0"), "dim": Color("b08a5c"), "panel": Color("1e1028e6"), "button": Color("4a2468"),
+		"hover": Color("6a3290"), "pressed": Color("341a4a"), "accent": Color("ff8a1e"), "back": Color("120a18") },
 ]
 
 # 套用配色與字型、決定暫停時能不能動；學員的同一種畫面已經有一個的話自己刪掉並警告；
@@ -346,6 +367,9 @@ func _add_panel(t: Theme, c: Dictionary) -> void:
 	var box := StyleBoxTexture.new()
 	box.texture = _PANEL_TEXTURES[style]
 	box.set_texture_margin_all(_PANEL_PATCH)
+	if style == STYLE_WOOD:
+		box.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
+		box.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
 	box.modulate_color = c.get("panel", _DEFAULT_PANEL)
 	var margin: Vector2 = _PANEL_MARGINS[style]
 	box.content_margin_left = margin.x
@@ -391,6 +415,35 @@ func _button_box(color: Color, edge: Color, pressed: bool) -> StyleBoxFlat:
 			box.content_margin_left = 8
 			box.content_margin_right = 8
 			box.content_margin_top = 4 if pressed else 2
+		STYLE_WOOD:
+			box.set_corner_radius_all(2)
+			box.anti_aliasing = false
+			box.set_border_width_all(1)
+			box.border_color = color.darkened(0.5)
+			box.border_width_bottom = 1 if pressed else 2
+			box.content_margin_left = 6
+			box.content_margin_right = 6
+			box.content_margin_top = 3 if pressed else 2
+		STYLE_SCIFI:
+			box.bg_color = Color(color, color.a * 0.85)
+			box.set_border_width_all(1)
+			box.border_width_left = 3
+			box.border_color = edge
+			box.content_margin_left = 8
+			box.content_margin_right = 6
+		STYLE_COMIC:
+			box.border_color = _INK
+			box.set_border_width_all(2)
+			box.border_width_right = 2 if pressed else 4
+			box.border_width_bottom = 2 if pressed else 4
+			box.content_margin_left = 8 if pressed else 6
+			box.content_margin_right = 6
+			box.content_margin_top = 4 if pressed else 2
+		STYLE_RETRO:
+			box.border_width_left = 4
+			box.border_color = edge
+			box.content_margin_left = 10
+			box.content_margin_right = 6
 	return box
 
 # 條和拉桿的方框：可愛圓角時是圓的，其他風格方角
@@ -399,13 +452,19 @@ func _bar_box(color: Color, margin: int = 4) -> StyleBoxFlat:
 	if style == STYLE_CUTE:
 		box.set_corner_radius_all(3)
 		box.anti_aliasing = false
+	elif style == STYLE_WOOD:
+		box.set_corner_radius_all(2)
+		box.anti_aliasing = false
+	elif style == STYLE_COMIC:
+		box.set_border_width_all(1)
+		box.border_color = _INK
 	return box
 
 # 只有外框的方框，按鈕被選到（用鍵盤操作）時用；可愛圓角時也是圓角
 func _outline(color: Color) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.draw_center = false
-	box.set_border_width_all(1)
+	box.set_border_width_all(2 if style == STYLE_COMIC else 1)
 	box.border_color = color
 	if style == STYLE_CUTE:
 		box.set_corner_radius_all(6)
