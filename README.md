@@ -68,6 +68,7 @@
 1. **先看換完長什麼樣子**：打開 `levels/_starts/W4_SkinBox.tscn` → 按 **F6**（HUD、暫停選單、過關畫面、零件、角色都換過了）
 2. 回到自己的關卡（W4 才加入的話，把 `W4_SkinBox` 或 `W3_JuiceBox` 另存到 `_my/`）
 3. 自己的圖片、字型都放在 `_my/` 底下（例如 `_my/art/`）
+4. **用了別人的素材要記下來**：寫在 `_my/CREDITS.txt`，格式和授權怎麼看 → `零件手冊.md` §7
 
 **換零件外觀**：在關卡裡點選零件（終點、門、敵人、金幣…）→ 從 `skins/` 拖 `Skin` 進去當它的子節點 → 把圖拖進 `texture_normal`。
 - 黃色虛線框是原本色塊的範圍，碰撞不會跟著圖變，圖要畫在框裡（可以直接拖動 `Skin` 對位置）
@@ -295,5 +296,5 @@
 
 1. 把 `build/web/` **裡面的所有檔案**壓成一個 zip（`index.html` 要在 zip 最外層）
 2. itch.io → **Upload new project** → Kind of project 選 **HTML**
-3. 上傳 zip → 勾選 **This file will be played in the browser** → 存檔
+3. 上傳 zip → 勾選 **This file will be played in the browser** → 把 `_my/CREDITS.txt` 的內容貼到頁面說明（Description）→ 存檔
 4. 分享網址給別人

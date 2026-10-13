@@ -916,6 +916,23 @@
 　　　後座力卡（本來就用 Input Map 的方向動作）、子彈時間（只有 `key`）、脫殼切換殼的 Q／E、暫停鍵 Esc／P 沒有改
 　　　（驗證：`tests/systems/InputMapActionTest.tscn`）
 
+## 階段 56：素材整理
+
+- [x] U202 測試素材與 W4_SkinBox 示範素材依作者分資料夾、刪掉沒用到的、補 CREDITS；手冊加「用了別人的素材要標註」
+　　→ 講師決定：AI 暫代圖當講師自己畫的（說明檔不寫 AI），講師補畫零件圖（箱子、崩塌地板、彈射台、開關方塊開／關、重生點升／降旗），
+　　　之後搬到 `art/` 給找不到素材的學員用（另開單元）；用不到的暫代圖（按下的按鈕、終點、收起來的尖刺、箭、火球、刀光）刪掉
+　　→ 講師決定：素材依作者分資料夾、檔名維持原包；Foxy、`tileset.png` 作者 Ansimuz，Pixel Adventure 1 作者 Pixel Frog（CC0）；
+　　　沒用到的素材全刪（`objects_/`、Foxy 的 `.ase` 與 preview、沒用到的水果和陷阱）
+　　→ 講師決定：Ansimuz 的素材要標註作者（CREDITS 寫明）；AttackSkinTest 的箭、火球、刀光沒人用，欄位留空、測色塊就好
+　　→ 講師決定：學員標註素材的說明放零件手冊 §7（不在 `_my/` 放範本檔，學員重灌時會蓋掉）
+　　→ 實作：`tests/skins/_art/` 分成 `Ansimuz/`、`PixelFrog/`、`AI_Placeholder/`；`_W4SkinBox/art/` 分成 `Ansimuz/`、`PixelFrog/`，
+　　　講師的圖（終點紅旗）與專案自己做的愛心留在根目錄；兩邊各一份 `CREDITS.md`。W4_SkinBox 的終點原本是 tileset 切的 32×32 石磚，改成講師的紅旗。
+　　　測試場景改用講師的圖：BlockSkinTest（重生點、開關方塊、終點；拿掉收起來的尖刺 Spike1）、SkinEventTest（箱子、終點；
+　　　按鈕沒有「啟動」圖，閃完用原本效果）、W4_BadExample（AI 圖的終點）；AttackSkinTest 拿掉圖。README §3.2、§8.3 指向手冊
+　　　（驗證：`tests/skins/BlockSkinTest.tscn`、`tests/skins/SkinEventTest.tscn`、`levels/_starts/W4_SkinBox.tscn`）
+- [ ] U203 `Skin`／`SkinAnimated` 在編輯器裡也藏起原本的色塊（只留黃色虛線框），擺的時候看到的就是遊戲裡的樣子；
+	  皮設定有問題（沒放圖、缺動畫）時色塊照舊顯示（講師決定，U202 時提出：透明背景的圖後面會露出色塊）
+
 ## 之後再做（構想，還沒排進單元）
 
 - 手機觸控按鈕：拖進關卡的虛擬按鈕組件，下拉選它代表哪個動作，只在觸控裝置上顯示（講師決定先放待做，U201 時提出）
