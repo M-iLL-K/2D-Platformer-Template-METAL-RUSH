@@ -950,7 +950,13 @@
 　　　金幣改用 `art/blocks_skin/Pickup_coin.png`（12×12 剛好是金幣大小，HUD 圖示一起換），加一個重生點套 `Checkpoint`／`Checkpoint_active`。
 　　　主場景沒改（還是 `_Template`），所以示範選單的「回標題」照規則藏起來
 	  （驗證：`levels/_starts/W4_SkinBox.tscn`、`levels/_starts/_W4SkinBox/ui/TitleDemo.tscn`）
-- [ ] U206 `W4_SkinPractice` 題目補上新功能（標題畫面、背景、風格、色調、瞇眼測試、講師零件圖），每種都碰一下
+- [x] U206 `W4_SkinPractice` 題目補上新功能（標題畫面、背景、風格、色調、瞇眼測試、講師零件圖），每種都碰一下
+	  （驗證：`levels/_starts/W4_SkinPractice.tscn`）
+　　→ 講師決定：原本 8 題保留，新增 5 題；關卡往右延伸 40 格（房間 60→100 格寬，右牆、終點往右搬，延伸的部分是平地），新告示牌掛在上面
+　　→ 實作：第 5 題改成「換字型、配色或風格」（`style` 不是預設也算）；新題 9～13（`task` 16～20）：
+　　　背景（`SkinBackground` 有圖）、統一色調（`ColorGrade` 強度大於 0）、講師的零件圖（有 `Skin` 用了 `art/blocks_skin/` 的圖）、
+　　　瞇眼測試（關卡裡有 `SquintTest`）、標題畫面（主場景在 `_my/` 而且是標題畫面，「開始遊戲」選的是現在這一關，比對路徑或 UID）。
+　　　用臨時場景確認 5 題做對時都會變綠
 
 ## 之後再做（構想，還沒排進單元）
 

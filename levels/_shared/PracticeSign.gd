@@ -6,7 +6,8 @@ extends Node2D
 
 ## 這塊告示牌是哪一題
 @export_enum("落地震動", "跳躍音效", "金幣星星", "金幣音效", "用力震", "打倒頓幀", "按鈕推近", "自己的音效",
-	"W4 終點換圖", "W4 血條右上角", "W4 遊玩時間", "W4 愛心血量", "W4 字型配色", "W4 角色動畫", "W4 敵人動畫", "W4 暫停選單")
+	"W4 終點換圖", "W4 血條右上角", "W4 遊玩時間", "W4 愛心血量", "W4 字型配色", "W4 角色動畫", "W4 敵人動畫", "W4 暫停選單",
+	"W4 背景", "W4 統一色調", "W4 講師的零件圖", "W4 瞇眼測試", "W4 標題畫面")
 var task: int = 0:
 	set(value):
 		task = value
@@ -26,16 +27,23 @@ const _TASKS := [
 	["2. 血條移到畫面右上角", "ui/templates/HudTemplate 右鍵再製到 _my/，打開把血條拖到右上角，再把 HUD 拖進關卡"],
 	["3. HUD 加一個遊玩時間", "在你的 HUD 裡拖一個 HudNumber，source 選遊玩時間"],
 	["4. 血量改成愛心圖示", "你的 HUD 裡血條換成 HudIcons，把愛心圖拖進 full_icon"],
-	["5. 整套 UI 換字型或配色", "點你的 HUD 最上層，palette 換一個，或把字型檔拖進 font"],
+	["5. 整套 UI 換字型、配色或風格", "點你的 HUD 最上層，palette 或 style 換一個，或把字型檔拖進 font"],
 	["6. 角色有待機和跑步動畫", "Visual 底下換成 AnimatedSprite2D 做「待機」「跑步」，拖 Juice_Animator 進 Player → Juice"],
 	["7. 敵人換成會動的皮", "選 Enemy，拖 SkinAnimated 進去，做一段好幾格的「走路」動畫"],
 	["8. 換成自己的暫停選單", "PauseMenuTemplate 再製到 _my/ 改排版，拖進 UISettings 的 pause_menu_scene"],
+	["9. 關卡加上背景", "從 skins/ 拖 SkinBackground 進關卡，把背景圖拖進 texture"],
+	["10. 整個畫面統一色調", "從 skins/ 拖 ColorGrade 進關卡，選 tone、拉 strength"],
+	["11. 零件用講師畫的圖", "選一個零件拖 Skin 進去，把 art/blocks_skin/ 裡同名的圖拖進 texture_normal"],
+	["12. 瞇眼看看主角清不清楚", "從 skins/ 拖 SquintTest 進關卡，F6 後按 F1"],
+	["13. 從自己的標題畫面開始", "TitleScreenTemplate 再製到 _my/，開始遊戲選這一關，右鍵設為主場景"],
 ]
 # 告示牌等這麼久再檢查（秒）：UISettings 接上的畫面、UI 排版都要等一下才到位
 const _CHECK_DELAY := 0.3
 const _HUD_PARTS := ["HudBar.gd", "HudIcons.gd"]
 const _HEALTH := "血量"
 const _SOURCE_PLAY_TIME := 1
+const _TEACHER_ART := "res://art/blocks_skin/"
+const _MENU_START := 3
 const _WIDTH := 120.0
 const _TODO_COLOR := Color(0.25, 0.2, 0.15, 0.85)
 const _DONE_COLOR := Color(0.15, 0.45, 0.2, 0.9)
@@ -79,10 +87,15 @@ func _check() -> bool:
 		9: return _custom_parts(0, _HUD_PARTS).any(func(n): return _is_health(n) and _in_top_right(n))
 		10: return _custom_parts(0, ["HudNumber.gd", "HudText.gd"]).any(func(n): return n.source == _SOURCE_PLAY_TIME)
 		11: return _custom_parts(0, ["HudIcons.gd"]).any(func(n): return _is_health(n) and n.full_icon != null)
-		12: return _custom_roots(-1).any(func(r): return r.palette != 0 or r.font != null)
+		12: return _custom_roots(-1).any(func(r): return r.palette != 0 or r.style != 0 or r.font != null)
 		13: return not _find(juice, "Juice_Animator").is_empty() and _player_has_anims(["待機", "跑步"])
 		14: return _enemy_walks()
 		15: return not _custom_roots(1).is_empty()
+		16: return get_tree().get_nodes_in_group("skin_background").any(func(n): return n.texture != null)
+		17: return _scene_nodes("ColorGrade.gd").any(func(n): return n.strength > 0.0)
+		18: return _scene_nodes("Skin.gd").any(func(n): return _is_teacher_art(n.texture_normal) or _is_teacher_art(n.texture_active))
+		19: return not get_tree().get_nodes_in_group("squint_test").is_empty()
+		20: return _title_starts_here()
 	return false
 
 # 有沒有終點套上放了圖的皮（Skin 有 texture_normal、或 SkinAnimated 有「平常」）
@@ -93,6 +106,37 @@ func _goal_has_skin() -> bool:
 				return true
 			if _script_file(child) == "SkinAnimated.gd" and child.sprite_frames != null and child.sprite_frames.has_animation("平常"):
 				return true
+	return false
+
+# 關卡裡掛著指定腳本的節點
+func _scene_nodes(file: String) -> Array:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return []
+	return scene.find_children("*", "", true, false).filter(func(n): return _script_file(n) == file)
+
+# 這張圖是不是 art/blocks_skin/ 裡講師畫的
+func _is_teacher_art(tex: Texture2D) -> bool:
+	return tex != null and tex.resource_path.begins_with(_TEACHER_ART)
+
+# 主場景是不是 _my/ 裡的標題畫面，而且它的「開始遊戲」選的是這一關
+func _title_starts_here() -> bool:
+	var title := PauseMenu.get_title_scene()
+	if title.begins_with("uid://"):
+		title = ResourceUID.get_id_path(ResourceUID.text_to_id(title))
+	if not title.begins_with("res://_my/") or not PauseMenu.is_title_scene_file(title):
+		return false
+	var here := get_tree().current_scene.scene_file_path
+	var here_uid := ResourceUID.id_to_text(ResourceLoader.get_resource_uid(here))
+	var state := (load(title) as PackedScene).get_state()
+	for i in state.get_node_count():
+		var props := {}
+		for j in state.get_node_property_count(i):
+			props[state.get_node_property_name(i, j)] = state.get_node_property_value(i, j)
+		if props.get("action") != _MENU_START:
+			continue
+		if "res://" + str(props.get("level", "")) == here or str(props.get("level_uid", "")) == here_uid:
+			return true
 	return false
 
 # 學員自己的 UI（kind：0 HUD、1 暫停選單、2 過關畫面，-1 全部），用預設範本的不算
