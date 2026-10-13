@@ -546,7 +546,7 @@ func _test_animator() -> void:
 	await _wait_frames(2)
 
 # blocks/ 裡每個有色塊的零件輪流套 Skin（白色方塊圖）或 SkinAnimated（平常／啟動／走路），
-# 放在遠離玩家的地方，開關、打、重置一輪後拿掉；不崩潰、Player 還在
+# 放在遠離玩家的地方，開關、打、重置一輪後拿掉；中間穿插訊號換圖（兩種優先輪流）；不崩潰、Player 還在
 func _test_skins() -> void:
 	var tex: Texture2D = preload("res://art/white_block.png")
 	var frames := _make_frames(["平常", "啟動", "走路", "受傷", "死亡"])
@@ -563,15 +563,21 @@ func _test_skins() -> void:
 			skin = skin_scene.instantiate()
 			skin.texture_normal = tex
 			skin.texture_active = tex if index % 4 == 0 else null
+			skin.more_textures = Array([tex, null], TYPE_OBJECT, &"Texture2D", null)
 		else:
 			skin = anim_scene.instantiate()
 			skin.sprite_frames = frames
+		skin.signal_priority = (index / 2) % 2
+		skin.loop_looks = index % 3 != 0
 		block.add_child(skin)
 		if block is Node2D:
 			block.position = Vector2(3000 + index * 40, 0)
 		add_child(block)
 		index += 1
 		await _wait_frames(5)
+		for look in ["next_look", "next_look", "next_look", "previous_look", "show_last", "show_first", "show_active", "show_normal"]:
+			skin.call(look)
+		skin.show_look(2)
 		for method in ["deactivate", "activate", "toggle"]:
 			if block.has_method(method):
 				block.call(method)
@@ -579,6 +585,7 @@ func _test_skins() -> void:
 			for k in 3:
 				block.take_hit(1, Vector2.ZERO, self)
 		await _wait_frames(5)
+		skin.next_look()
 		if block.has_method("reset"):
 			block.reset()
 		await _wait_frames(5)

@@ -6,6 +6,7 @@ extends AnimatedSprite2D
 # 遊戲開始時零件會藏起原本的色塊、改播這裡的動畫。
 # 編輯器裡的黃色虛線框是原本色塊的範圍：碰撞範圍不會跟著圖片變，圖要畫在框裡。
 # fill_style 選「拉伸蓋滿」時，位置和大小自動對齊色塊（動畫沒辦法重複鋪滿，要鋪滿請用 Skin）。
+# 訊號換動畫：別的零件的訊號可以連到 show_active／show_normal／next_look…，動畫照「平常」→「啟動」→ 其他動畫（照名稱排）的順序排。
 
 ## 要不要跟著零件左右翻（敵人轉向）
 @export var follow_facing: bool = true
@@ -25,12 +26,20 @@ extends AnimatedSprite2D
 		ignore_style_check = value
 		update_configuration_warnings()
 
+@export_group("訊號換圖")
+## 訊號換過動畫之後，零件自己的狀態又改變時（例如踩到終點、整關重來）聽誰的：
+## 零件的狀態優先（換回零件該播的動畫）、訊號優先（維持訊號換的動畫，零件只加原本效果）
+@export_enum("零件的狀態優先", "訊號優先") var signal_priority: int = 0
+## next_look 換到最後一段之後回到第一段；不勾就停在最後一段（previous_look 也一樣停在第一段）
+@export var loop_looks: bool = true
+
 const NORMAL := "平常"
 const ACTIVE := "啟動"
 const WALK := "走路"
 const HURT := "受傷"
 const DIE := "死亡"
 const FILL_STRETCH := 1
+const PRIORITY_SIGNAL := 1
 # 編輯器裡每隔幾秒重新檢查動畫名稱（學員一邊改 Sprite Frames，驚嘆號一邊更新）
 const _CHECK_SECONDS := 1.0
 
@@ -41,6 +50,7 @@ var _play_id := 0  # 每播一段加一，讓循環的「受傷」播一輪後�
 var _state_anim := NORMAL  # 現在的狀態該播哪一段（平常或「啟動」），事件動畫播完回到這段
 var _event_id := 0  # 每播一次事件動畫加一，讓舊的「播完回去」失效
 var _in_event := false  # 正在播 SkinEvent 的動畫：這段時間狀態改變先記著，播完再換
+var _look := -1  # 訊號換到第幾段（從 0 數）；-1 代表沒被訊號換過，照零件的狀態播
 var _hidden_block: ColorRect = null  # 編輯器裡藏起來的零件色塊
 
 # 編輯器裡持續重畫外框、檢查動畫名稱；換一格就重新對齊（每格大小可能不一樣）
@@ -158,6 +168,7 @@ func skin_setup(is_enemy: bool) -> String:
 	if problem != "":
 		return problem
 	_base = WALK if is_enemy else NORMAL
+	_look = -1
 	_state_anim = _base
 	_base_flip = flip_h
 	animation_finished.connect(_on_animation_finished)
@@ -172,6 +183,9 @@ func skin_active_look() -> int:
 # 正在播事件動畫時先記著，播完再換
 func skin_set_state(use_active: bool, tint: Color) -> void:
 	self_modulate = tint
+	if _look >= 0 and signal_priority == PRIORITY_SIGNAL:
+		return
+	_look = -1
 	_state_anim = ACTIVE if use_active and sprite_frames.has_animation(ACTIVE) else _base
 	if not _in_event and animation != _state_anim:
 		play(_state_anim)
@@ -222,7 +236,7 @@ func skin_play(anim_name: String) -> void:
 		var id := _play_id
 		get_tree().create_timer(skin_anim_length(HURT)).timeout.connect(func():
 			if id == _play_id and animation == HURT:
-				play(_base)
+				play(_state_anim)
 		)
 
 # 零件呼叫：這段動畫播一次要幾秒（沒有這段回傳 0）
@@ -242,10 +256,94 @@ func skin_reset() -> void:
 	_play_id += 1
 	_event_id += 1
 	_in_event = false
-	_state_anim = _base
-	play(_base)
+	if _look < 0 or signal_priority != PRIORITY_SIGNAL:
+		_look = -1
+		_state_anim = _base
+	play(_state_anim)
 
 # 「受傷」播完回到平常的那一段（「死亡」停在最後一格）
 func _on_animation_finished() -> void:
 	if animation == HURT:
-		play(_base)
+		play(_state_anim)
+
+# ---- 訊號換圖（別的零件的訊號連過來，或自己寫程式呼叫）
+
+# 換回平常的動畫（一般零件「平常」、敵人「走路」）
+func show_normal() -> void:
+	_go_to_look(0)
+
+# 換成「啟動」動畫；沒有「啟動」時印警告、不換
+func show_active() -> void:
+	if sprite_frames == null or not sprite_frames.has_animation(ACTIVE):
+		SkinLink.warn("「%s」的 show_active 被呼叫了，但沒有「啟動」動畫，動畫沒有換" % _host_name())
+		return
+	_go_to_look(1)
+
+# 換下一段；最後一段之後回到第一段（loop_looks 沒勾就停在最後一段）
+func next_look() -> void:
+	var count := _looks().size()
+	var next := _current_look() + 1
+	if next >= count:
+		next = 0 if loop_looks else count - 1
+	_go_to_look(next)
+
+# 換上一段；第一段之前回到最後一段（loop_looks 沒勾就停在第一段）
+func previous_look() -> void:
+	var count := _looks().size()
+	var previous := _current_look() - 1
+	if previous < 0:
+		previous = count - 1 if loop_looks else 0
+	_go_to_look(previous)
+
+# 換成第一段（平常）
+func show_first() -> void:
+	_go_to_look(0)
+
+# 換成最後一段
+func show_last() -> void:
+	_go_to_look(_looks().size() - 1)
+
+# 換成第幾段（從 1 開始數：1 是平常、2 是「啟動」、3 以後是其他動畫照名稱排），會寫程式的人用
+func show_look(number: int) -> void:
+	var count := _looks().size()
+	if number < 1 or number > count:
+		SkinLink.warn("「%s」的 show_look(%d)：只有 %d 段動畫（1～%d），動畫沒有換" % [_host_name(), number, count, count])
+		return
+	_go_to_look(number - 1)
+
+# 全部的動畫照順序排：平常、「啟動」、其他動畫照名稱排（「受傷」「死亡」是敵人自己用的，不排進來）
+func _looks() -> Array[String]:
+	var list: Array[String] = []
+	if sprite_frames == null:
+		return list
+	for n in [_base, ACTIVE]:
+		if sprite_frames.has_animation(n) and not list.has(n):
+			list.append(n)
+	var names: Array = Array(sprite_frames.get_animation_names())
+	names.sort()
+	for n in names:
+		var anim := String(n)
+		if not list.has(anim) and anim not in [NORMAL, WALK, HURT, DIE]:
+			list.append(anim)
+	return list
+
+# 現在播的是第幾段（從 0 數）；被訊號換過就用記下來的，不然看現在狀態該播的那段
+func _current_look() -> int:
+	if _look >= 0:
+		return _look
+	return maxi(_looks().find(_state_anim), 0)
+
+# 換到第幾段（從 0 數）並記下來；正在播事件動畫時等播完再換
+func _go_to_look(index: int) -> void:
+	var list := _looks()
+	if list.is_empty():
+		return
+	_look = clampi(index, 0, list.size() - 1)
+	_state_anim = list[_look]
+	if not _in_event and animation != _state_anim:
+		play(_state_anim)
+
+# 警告訊息裡用的名字：零件名稱／皮的名稱
+func _host_name() -> String:
+	var host := get_parent()
+	return "%s/%s" % [host.name, name] if host != null else str(name)

@@ -288,6 +288,9 @@ const TIMELINE := "時間軸"
 - `follow_facing`、`active_style`、`follow_direction` 同 `Skin`（沒有「啟動」動畫時一律用原本效果）。
 - `fill_style` 只有「只放一張」「拉伸蓋滿」（動畫做不到重複鋪滿）。
 - 零件發生的事件（彈出、傳送、碎掉…）要播動畫：U180b `SkinEvent`，學員自己選「什麼時候 → 播哪段」，不寫死動畫名稱。
+- 訊號換圖（U208，`Skin`、`SkinAnimated` 都有）：別的零件的訊號連到 `show_normal`／`show_active`／`next_look`／`previous_look`／`show_first`／`show_last`／`show_look(第幾張)`。
+  順序是 `texture_normal` → `texture_active` → `more_textures`（動畫：平常 → 啟動 → 其他照名稱排，不含「受傷」「死亡」）；
+  `signal_priority`（零件的狀態優先／訊號優先）、`loop_looks`（最後一張接回第一張）。
 
 ### 6.3 程式生出來的東西
 

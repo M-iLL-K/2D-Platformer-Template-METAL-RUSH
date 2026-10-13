@@ -247,6 +247,10 @@ static func draw_outline(skin: Node2D) -> void:
 	for i in 4:
 		skin.draw_dashed_line(corners[i], corners[(i + 1) % 4], color, 1.0, 2.0)
 
+# 印中文警告到輸出面板（皮自己也用這個）
+static func warn(message: String) -> void:
+	_warn(message)
+
 # 印中文警告到輸出面板
 static func _warn(message: String) -> void:
 	push_warning("[皮] %s" % message)

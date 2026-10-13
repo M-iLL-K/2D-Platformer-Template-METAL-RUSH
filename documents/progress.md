@@ -958,6 +958,14 @@
 　　　瞇眼測試（關卡裡有 `SquintTest`）、標題畫面（主場景在 `_my/` 而且是標題畫面，「開始遊戲」選的是現在這一關，比對路徑或 UID）。
 　　　用臨時場景確認 5 題做對時都會變綠
 
+- [x] U208 訊號換圖：`Skin`／`SkinAnimated` 加 `show_normal`／`show_active`／`next_look`／`previous_look`／`show_first`／`show_last`／`show_look(第幾張)`，
+	  別的零件的訊號連過來就能換圖；`Skin` 加 `more_textures` 放兩張以上的圖（驗證：`tests/skins/SkinLookTest.tscn`）
+　　→ 講師決定（U205 驗收時提出）：想用訊號讓終點的旗子升起（不過關）；零件的狀態跟訊號撞在一起時聽誰的「讓學員選」：
+　　　`signal_priority`（零件的狀態優先，預設／訊號優先）；兩張以上用 `next_look`／`previous_look`，要有第一張和最後一張（`show_first`／`show_last`），
+　　　`show_look(第幾張)` 保留給會寫程式的同學；`loop_looks`（預設勾）最後一張接回第一張，不勾停住
+　　→ 實作：順序是 `texture_normal` → `texture_active` → `more_textures`（空的格子跳過、編輯器黃色驚嘆號）；動畫是平常 → 啟動 → 其他照名稱排（不含受傷、死亡）。
+　　　`show_look` 從 1 數，超出範圍、`show_active` 沒有狀態圖時中文警告不換。訊號優先時零件的狀態改變只加原本效果（照 `active_style`）。
+　　　`more_textures` 列進 CLAUDE.md 資源欄位例外；煙霧測試的套皮輪加訊號換圖（兩種優先輪流）
 ## 之後再做（構想，還沒排進單元）
 
 - 手機觸控按鈕：拖進關卡的虛擬按鈕組件，下拉選它代表哪個動作，只在觸控裝置上顯示（講師決定先放待做，U201 時提出）
