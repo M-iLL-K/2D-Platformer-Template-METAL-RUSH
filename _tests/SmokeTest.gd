@@ -597,7 +597,7 @@ func _test_skins() -> void:
 		_fail("套皮測試時 Player 消失了")
 
 # 三個 UI 範本跟 W4_SkinBox 的示範 UI：一輪直接放進場景（接法 B），一輪放進 UISettings（接法 A），
-# 中間讓數值變化（扣血、補血、撿金幣），最後全部拿掉；不崩潰、Player 還在
+# 中間讓數值變化（扣血、補血、撿金幣），HUD 的 hud_background 兩種輪一次，最後全部拿掉；不崩潰、Player 還在
 func _test_ui_templates() -> void:
 	var sets := [
 		["res://ui/templates/HudTemplate.tscn", "res://ui/templates/PauseMenuTemplate.tscn", "res://ui/templates/ClearScreenTemplate.tscn"],
@@ -609,6 +609,9 @@ func _test_ui_templates() -> void:
 			var root: Node = (load(p) as PackedScene).instantiate()
 			add_child(root)
 			placed.append(root)
+		for bg in [UIRoot.HUD_BG_NONE, UIRoot.HUD_BG_OUTLINE]:
+			placed[0].hud_background = bg
+			await _wait_frames(2)
 		await _ui_value_round()
 		for n in placed:
 			if is_instance_valid(n):

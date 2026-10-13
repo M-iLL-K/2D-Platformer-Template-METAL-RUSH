@@ -190,6 +190,8 @@ const TIMELINE := "時間軸"
 - `style`（U191）：像素復古（原本的樣子，預設）／乾淨極簡（按鈕細外框、左右多留白）／可愛圓角（按鈕、條圓角，按鈕底邊加厚、按下變薄字往下）。
   形狀跟顏色分開：`style` 管形狀、`palette` 管顏色，任意組合；「預設」配色配像素復古以外的風格時用中性灰（`_NEUTRAL`），不然按鈕是 Godot 原本的樣子換不了形狀。
   底框（`Panel`／`PanelContainer`）用 `ui/styles/Panel_*.png` 灰階九宮格（24×24、四邊 8 像素），`StyleBoxTexture.modulate_color` 依配色的 panel 上色。
+- HUD 底框（U210）：`HudTemplate` 的 `Rows` 包在 `Panel`（`PanelContainer`）裡，跟暫停選單同一個九宮格底框。預設 HUD（`StatsHud`）沒有任何一列要顯示時藏起底框。
+- `hud_background`（U210，只有 HUD 顯示）：無／字加外框（預設，Label、Button、ProgressBar 描 2 像素邊，字亮描深、字暗描淺）。學員已經再製的 HUD 也會套到預設的字加外框。
   三套都用 Cubic_11（講師決定，換非像素中文字型網頁版多好幾 MB）。圓角一律關抗鋸齒，維持像素風的硬邊。
 - 畫面風格檢查 `skins/_scripts/StyleCheck.gd`（U193）：`Skin`／`SkinAnimated`／`SkinBackground` 的 `_get_configuration_warnings()` 呼叫，只在編輯器出黃色驚嘆號、執行時不印。
   ① `texture_filter` 不是 Inherit／Nearest（濾鏡在節點上，不在圖片匯入設定；不往上檢查父節點）；

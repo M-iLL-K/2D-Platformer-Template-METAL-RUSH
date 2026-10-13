@@ -24,7 +24,7 @@ const _TASKS := [
 	["7. 踩按鈕時鏡頭推近", "Juice_CameraZoom timing 選不自動觸發，按鈕的 turned_on 連到它的 play"],
 	["8. 撞牆時播自己的音效", "Juice_Sound：timing 撞牆時、sound 自訂，把音檔拖進 custom_sound"],
 	["1. 把終點換成自己的圖", "選 Goal，從 skins/ 拖 Skin 進去當子節點，把圖拖進 texture_normal"],
-	["2. 血條移到畫面右上角", "HudTemplate 再製到 _my/，選 Rows，Layout 的 Anchors Preset 選右上，再把 HUD 拖進關卡"],
+	["2. 血條移到畫面右上角", "HudTemplate 再製到 _my/，選 Panel，Layout 的 Anchors Preset 選右上，再把 HUD 拖進關卡"],
 	["3. HUD 加一個遊玩時間", "在你的 HUD 裡拖一個 HudNumber，source 選遊玩時間"],
 	["4. 血量改成愛心圖示", "你的 HUD 裡血條換成 HudIcons，把愛心圖拖進 full_icon"],
 	["5. 整套 UI 換字型、配色或風格", "點你的 HUD「最上層」，palette 或 style 換一個，或把字型檔拖進 font（改色塊顏色不算）"],

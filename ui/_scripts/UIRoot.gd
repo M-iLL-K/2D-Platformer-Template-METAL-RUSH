@@ -13,6 +13,7 @@ class_name UIRoot
 	set(value):
 		kind = value
 		_apply_process_mode()
+		_apply_theme()
 		notify_property_list_changed()
 ## 這一整套 UI 用的字型，從檔案系統把字型檔拖進來；空白用專案預設的像素字
 @export var font: Font:
@@ -33,6 +34,12 @@ class_name UIRoot
 @export_enum("像素復古", "乾淨極簡", "可愛圓角") var style: int = STYLE_PIXEL:
 	set(value):
 		style = value
+		_apply_theme()
+## HUD 蓋在遊戲畫面上，背景花的時候字會看不清楚：字加外框（字外面一圈描邊）；只有 HUD 有這一格。
+## 範本裡的 Panel 是底框，不要底框就把 Panel 的 Self Modulate 透明度拉到 0，或把 Rows 拖出來、刪掉 Panel
+@export_enum("無", "字加外框") var hud_background: int = HUD_BG_OUTLINE:
+	set(value):
+		hud_background = value
 		_apply_theme()
 
 @export_group("標題畫面")
@@ -58,6 +65,11 @@ const KIND_CLEAR_SCREEN := 2
 const KIND_TITLE := 3
 
 const PALETTE_DEFAULT := 0
+
+const HUD_BG_NONE := 0
+const HUD_BG_OUTLINE := 1
+# 字加外框的粗細（像素）
+const _OUTLINE_SIZE := 2
 
 const STYLE_PIXEL := 0
 const STYLE_CLEAN := 1
@@ -148,6 +160,8 @@ func _validate_property(property: Dictionary) -> void:
 	if property.name == "theme":
 		property.usage = PROPERTY_USAGE_NONE
 	elif _TITLE_NODES.has(property.name) and kind != KIND_TITLE:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+	elif property.name == "hud_background" and kind != KIND_HUD:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 
 # 這套 UI 放進關卡時（不是單獨編輯它的時候），把底下顯示零件的設定錯誤收集起來顯示在這裡：
@@ -295,8 +309,18 @@ func _apply_theme() -> void:
 		_add_palette(t, colors)
 	_add_panel(t, colors)
 	_add_variations(t, colors)
+	if kind == KIND_HUD and hud_background == HUD_BG_OUTLINE:
+		_add_outline(t, colors)
 	theme = t
 	_notify_children(self)
+
+# HUD 的字加外框：字是亮的就描深色、字是暗的就描淺色
+func _add_outline(t: Theme, c: Dictionary) -> void:
+	var text_color: Color = c.get("text", Color.WHITE)
+	var edge := Color(0, 0, 0, 0.85) if text_color.get_luminance() > 0.5 else Color(1, 1, 1, 0.85)
+	for type in ["Label", "Button", "ProgressBar"]:
+		t.set_constant("outline_size", type, _OUTLINE_SIZE)
+		t.set_color("font_outline_color", type, edge)
 
 # 把一套配色寫進 Theme：字、按鈕、進度條、拉桿、面板
 func _add_palette(t: Theme, c: Dictionary) -> void:
