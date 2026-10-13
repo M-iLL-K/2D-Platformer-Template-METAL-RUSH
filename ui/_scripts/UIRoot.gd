@@ -26,10 +26,12 @@ class_name UIRoot
 		font_size = value
 		_apply_theme()
 ## 配色：字、底色、按鈕、條的顏色一起換
-@export_enum("預設", "暗色", "亮色", "復古綠", "糖果", "海洋", "森林", "夕陽", "黑白", "萬聖節") var palette: int = PALETTE_DEFAULT:
+@export_enum("預設", "暗色", "亮色", "復古綠", "糖果", "海洋", "森林", "夕陽", "黑白", "萬聖節", "自訂") var palette: int = PALETTE_DEFAULT:
 	set(value):
 		palette = value
 		_apply_theme()
+		notify_property_list_changed()
+		update_configuration_warnings()
 ## 風格：按鈕、條、底框的形狀（像素復古＝方角、乾淨極簡＝細外框、可愛圓角＝圓角加厚底邊、木牌＝木紋加釘子、
 ## 科幻＝切角亮線、漫畫＝粗黑框加硬陰影、復古遊戲機＝雙線框），顏色照 palette
 @export_enum("像素復古", "乾淨極簡", "可愛圓角", "木牌", "科幻", "漫畫", "復古遊戲機") var style: int = STYLE_PIXEL:
@@ -42,6 +44,28 @@ class_name UIRoot
 	set(value):
 		hud_background = value
 		_apply_theme()
+
+@export_group("自訂配色")
+## 字的顏色（palette 選「自訂」才用到）：點色塊用滑鼠選
+@export var text_color: Color = Color("f0ece0"):
+	set(value):
+		text_color = value
+		_on_custom_color_changed()
+## 底框的顏色，拉低 A（透明度）可以看到後面的遊戲畫面
+@export var panel_color: Color = Color("2a2440e6"):
+	set(value):
+		panel_color = value
+		_on_custom_color_changed()
+## 按鈕的顏色（滑鼠移上去、按下去的顏色自動變亮變暗）
+@export var button_color: Color = Color("4a3f6e"):
+	set(value):
+		button_color = value
+		_on_custom_color_changed()
+## 亮色：條、拉桿、底框外框、按鈕被選到時的顏色
+@export var accent_color: Color = Color("ffb84a"):
+	set(value):
+		accent_color = value
+		_on_custom_color_changed()
 
 @export_group("標題畫面")
 ## 遊戲名稱（這一格可以打字）：填了就蓋掉範本裡 GameName 的字；空白就用範本裡原本的字
@@ -66,6 +90,10 @@ const KIND_CLEAR_SCREEN := 2
 const KIND_TITLE := 3
 
 const PALETTE_DEFAULT := 0
+const PALETTE_CUSTOM := 10
+# 自訂配色的字跟底框亮度差小於這個就提醒看不清楚
+const _MIN_CONTRAST := 0.3
+const _CUSTOM_FIELDS := ["text_color", "panel_color", "button_color", "accent_color"]
 
 const HUD_BG_NONE := 0
 const HUD_BG_OUTLINE := 1
@@ -155,6 +183,10 @@ func _ready() -> void:
 	_apply_title()
 	if Engine.is_editor_hint():
 		return
+	var contrast := custom_contrast_problem()
+	if contrast != "":
+		push_warning("[%s] %s" % [name, contrast])
+		printerr("⚠ [%s] %s" % [name, contrast])
 	_snap_containers(self)
 	if kind == KIND_TITLE:
 		_ready_title()
@@ -194,6 +226,8 @@ func _validate_property(property: Dictionary) -> void:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 	elif property.name == "hud_background" and kind != KIND_HUD:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
+	elif property.name in _CUSTOM_FIELDS and palette != PALETTE_CUSTOM:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
 
 # 這套 UI 放進關卡時（不是單獨編輯它的時候），把底下顯示零件的設定錯誤收集起來顯示在這裡：
 # 放進關卡的場景看不到裡面的子節點，錯誤要掛在看得到的這一層
@@ -202,6 +236,9 @@ func _get_configuration_warnings() -> PackedStringArray:
 	if not is_inside_tree():
 		return warnings
 	var scene_root := get_tree().edited_scene_root
+	var contrast := custom_contrast_problem()
+	if contrast != "":
+		warnings.append(contrast)
 	if kind == KIND_TITLE:
 		if scene_root != null and scene_root != self:
 			warnings.append(TITLE_NOT_ALONE)
@@ -320,8 +357,38 @@ func _collect_warnings(node: Node, scene_root: Node, warnings: PackedStringArray
 func get_palette_color(role: String, fallback: Color) -> Color:
 	return _colors().get(role, fallback)
 
+# 自訂配色改了顏色：重建 Theme、重新檢查看不看得清楚
+func _on_custom_color_changed() -> void:
+	if palette == PALETTE_CUSTOM:
+		_apply_theme()
+		update_configuration_warnings()
+
+# 自訂配色的字跟底框顏色太接近時回傳提醒，沒問題回傳空字串
+func custom_contrast_problem() -> String:
+	if palette != PALETTE_CUSTOM:
+		return ""
+	if absf(text_color.get_luminance() - panel_color.get_luminance()) >= _MIN_CONTRAST:
+		return ""
+	return "自訂配色的 text_color（字）跟 panel_color（底框）太接近，字可能看不清楚：把其中一個調亮、另一個調暗"
+
+# 從自訂的 4 個顏色算出整套顏色：次要字＝字往底框混一點，滑過／按下＝按鈕變亮／變暗，條的底＝底框變暗
+func _custom_colors() -> Dictionary:
+	var lighter := button_color.get_luminance() < 0.6
+	return {
+		"text": text_color,
+		"dim": text_color.lerp(Color(panel_color, 1.0), 0.45),
+		"panel": panel_color,
+		"button": button_color,
+		"hover": button_color.lightened(0.15) if lighter else button_color.darkened(0.12),
+		"pressed": button_color.darkened(0.2),
+		"accent": accent_color,
+		"back": Color(panel_color.darkened(0.45), 1.0),
+	}
+
 # 現在用的這套顏色：「預設」配色配像素復古以外的風格時用中性色
 func _colors() -> Dictionary:
+	if palette == PALETTE_CUSTOM:
+		return _custom_colors()
 	var colors: Dictionary = _PALETTES[palette]
 	if colors.is_empty() and style != STYLE_PIXEL:
 		return _NEUTRAL

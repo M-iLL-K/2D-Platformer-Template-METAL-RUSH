@@ -663,7 +663,7 @@ func _test_title_screen() -> void:
 	if Stats.get_value(Stats.HEALTH_KIND) != 3:
 		_fail("換場景前的歸零之後血量不是 3")
 
-# UIRoot 的七種風格 × 十套配色輪流套一次；ColorGrade 放兩個、換色調、拔掉
+# UIRoot 的七種風格 × 十一套配色（含自訂）輪流套一次；ColorGrade 放兩個、換色調、拔掉
 func _test_styles_and_grade() -> void:
 	var roots: Array[Node] = []
 	for p in ["res://ui/templates/PauseMenuTemplate.tscn", "res://ui/templates/ClearScreenTemplate.tscn"]:
@@ -672,7 +672,7 @@ func _test_styles_and_grade() -> void:
 		add_child(r)
 		roots.append(r)
 	for style in 7:
-		for palette in 10:
+		for palette in 11:
 			for r in roots:
 				if is_instance_valid(r):
 					r.style = style
