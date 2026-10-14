@@ -25,14 +25,16 @@ class_name UIRoot
 	set(value):
 		font_size = value
 		_apply_theme()
-## 配色：字、底色、按鈕、條的顏色一起換；標題畫面多一個「跟主視覺配」，從主視覺的圖自動配顏色
-@export_enum("預設", "暗色", "亮色", "復古綠", "糖果", "海洋", "森林", "夕陽", "黑白", "萬聖節", "自訂", "跟主視覺配") var palette: int = PALETTE_DEFAULT:
+## 配色：字、底色、按鈕、條的顏色一起換；標題畫面多一個「跟主視覺配」，從主視覺的圖自動配顏色；
+## 其他畫面多一個「跟標題一樣」，用主場景（標題畫面）的配色，整套 UI 統一
+@export_enum("預設", "暗色", "亮色", "復古綠", "糖果", "海洋", "森林", "夕陽", "黑白", "萬聖節", "自訂", "跟主視覺配", "跟標題一樣") var palette: int = PALETTE_DEFAULT:
 	set(value):
 		if value == PALETTE_CUSTOM and palette == PALETTE_ART:
 			_copy_art_to_custom()
 		palette = value
 		if is_inside_tree():
 			_refresh_art_colors()
+		set_process(Engine.is_editor_hint() and palette == PALETTE_TITLE)
 		_apply_theme()
 		notify_property_list_changed()
 		update_configuration_warnings()
@@ -111,6 +113,15 @@ const KIND_TITLE := 3
 const PALETTE_DEFAULT := 0
 const PALETTE_CUSTOM := 10
 const PALETTE_ART := 11
+const PALETTE_TITLE := 12
+# 測試用：「跟標題一樣」改看這個場景，不看專案的主場景（空字串＝看主場景）
+static var title_scene_override := ""
+# 「跟標題一樣」讀到的標題配色（所有畫面共用，遊戲中讀一次；編輯器裡每秒重讀，標題改了跟著變）
+static var _title_cache := {}
+static var _title_cache_problem := ""
+static var _title_cache_time := -1
+# 「跟標題一樣」上一次套用的顏色，編輯器裡比對標題有沒有改
+var _applied_title_colors := {}
 const _ArtPalette := preload("res://ui/_scripts/ArtPalette.gd")
 const _ART_FIELDS := ["tone", "main_color"]
 const NO_KEY_ART := "palette 選「跟主視覺配」，但找不到主視覺的圖：把圖拖進 key_art（或範本裡的 KeyArt），先用預設配色"
@@ -203,13 +214,14 @@ const _PALETTES := [
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_apply_process_mode()
+	set_process(Engine.is_editor_hint() and palette == PALETTE_TITLE)
 	if Engine.is_editor_hint() or art_colors.is_empty():
 		_refresh_art_colors()
 	_apply_theme()
 	_apply_title()
 	if Engine.is_editor_hint():
 		return
-	for problem in [custom_contrast_problem(), art_problem()]:
+	for problem in [custom_contrast_problem(), art_problem(), title_palette_problem()]:
 		if problem != "":
 			push_warning("[%s] %s" % [name, problem])
 			printerr("⚠ [%s] %s" % [name, problem])
@@ -256,10 +268,16 @@ func _validate_property(property: Dictionary) -> void:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 	elif property.name in _ART_FIELDS and palette != PALETTE_ART:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
-	elif property.name == "palette" and kind != KIND_TITLE and palette != PALETTE_ART:
+	elif property.name == "palette":
+		# 「跟主視覺配」只給標題畫面、「跟標題一樣」只給其他畫面（已經選了的照樣顯示，才看得到黃色驚嘆號）
 		var options: PackedStringArray = property.hint_string.split(",")
-		options.resize(PALETTE_ART)
-		property.hint_string = ",".join(options)
+		var shown := PackedStringArray()
+		for i in options.size():
+			var hide_art := i == PALETTE_ART and kind != KIND_TITLE and palette != PALETTE_ART
+			var hide_title := i == PALETTE_TITLE and kind == KIND_TITLE and palette != PALETTE_TITLE
+			if not hide_art and not hide_title:
+				shown.append("%s:%d" % [options[i].get_slice(":", 0), i])
+		property.hint_string = ",".join(shown)
 
 # 這套 UI 放進關卡時（不是單獨編輯它的時候），把底下顯示零件的設定錯誤收集起來顯示在這裡：
 # 放進關卡的場景看不到裡面的子節點，錯誤要掛在看得到的這一層
@@ -274,6 +292,9 @@ func _get_configuration_warnings() -> PackedStringArray:
 	var art := art_problem()
 	if art != "":
 		warnings.append(art)
+	var follow := title_palette_problem()
+	if follow != "":
+		warnings.append(follow)
 	if kind == KIND_TITLE:
 		if scene_root != null and scene_root != self:
 			warnings.append(TITLE_NOT_ALONE)
@@ -404,6 +425,48 @@ func art_problem() -> String:
 		return "讀不到主視覺「%s」的顏色，先用預設配色：換一張 PNG 或 JPG 圖試試" % _art_texture().resource_path.get_file()
 	return ""
 
+# 「跟標題一樣」用不了的原因（這個就是標題畫面、主場景不是標題畫面），能用回傳空字串
+func title_palette_problem() -> String:
+	if palette != PALETTE_TITLE:
+		return ""
+	if kind == KIND_TITLE:
+		return "palette 的「跟標題一樣」是給 HUD、暫停選單、過關畫面用的，標題畫面自己選一套配色"
+	_read_title_palette()
+	return _title_cache_problem
+
+# 讀主場景（標題畫面）的配色存起來：遊戲中只讀一次，編輯器裡超過一秒就重讀
+static func _read_title_palette() -> void:
+	var now := Time.get_ticks_msec()
+	if _title_cache_time >= 0 and (not Engine.is_editor_hint() or now - _title_cache_time < 1000):
+		return
+	_title_cache_time = now
+	_title_cache = {}
+	_title_cache_problem = ""
+	var path: String = title_scene_override
+	if path == "":
+		path = ProjectSettings.get_setting("application/run/main_scene", "")
+	var packed := load(path) as PackedScene if path != "" and ResourceLoader.exists(path) else null
+	var title: Node = packed.instantiate() if packed != null else null
+	if not title is UIRoot or (title as UIRoot).kind != KIND_TITLE:
+		_title_cache_problem = "palette 選「跟標題一樣」，但專案的主場景不是標題畫面：先把 _my/ 裡的標題畫面「設為主場景」，現在先用預設配色"
+	else:
+		var t := title as UIRoot
+		if t.palette == PALETTE_ART and t.art_colors.is_empty():
+			t._refresh_art_colors()
+		_title_cache = t._colors()
+	if title != null:
+		title.free()
+
+# 編輯器裡選了「跟標題一樣」：標題的配色改了就跟著換
+func _process(_delta: float) -> void:
+	if not Engine.is_editor_hint() or palette != PALETTE_TITLE:
+		set_process(false)
+		return
+	_read_title_palette()
+	if _title_cache != _applied_title_colors:
+		_apply_theme()
+		update_configuration_warnings()
+
 # 主視覺的圖：key_art 有填就用它，沒填就用範本裡 KeyArt 原本的圖
 func _art_texture() -> Texture2D:
 	if key_art != null:
@@ -476,6 +539,12 @@ func _colors() -> Dictionary:
 	if palette == PALETTE_ART:
 		if art_problem() == "":
 			return _colors_from(art_colors[0], art_colors[1], art_colors[2], art_colors[3])
+		return _NEUTRAL if style != STYLE_PIXEL else {}
+	if palette == PALETTE_TITLE:
+		if title_palette_problem() == "":
+			_applied_title_colors = _title_cache
+			if not _title_cache.is_empty():
+				return _title_cache
 		return _NEUTRAL if style != STYLE_PIXEL else {}
 	var colors: Dictionary = _PALETTES[palette]
 	if colors.is_empty() and style != STYLE_PIXEL:

@@ -657,6 +657,15 @@ func _test_title_screen() -> void:
 	hud.palette = UIRoot.PALETTE_ART
 	if hud.art_problem() != UIRoot.ART_NOT_TITLE:
 		_fail("HUD 選了「跟主視覺配」沒有警告")
+	# 跟標題一樣（U219）：主場景是標題就用它的顏色，不是標題要警告
+	hud.palette = UIRoot.PALETTE_TITLE
+	for case in [["res://tests/ui/TitleArtPaletteTest.tscn", true], ["res://tests/ui/TitleFlowLevel.tscn", false]]:
+		UIRoot.title_scene_override = case[0]
+		UIRoot._title_cache_time = -1
+		if (hud.title_palette_problem() == "") != case[1]:
+			_fail("跟標題一樣：%s 的結果不對" % case[0])
+	UIRoot.title_scene_override = ""
+	UIRoot._title_cache_time = -1
 	hud.free()
 	var menu_action: Script = load("res://ui/_scripts/MenuAction.gd")
 	var levels: PackedStringArray = menu_action.find_levels()

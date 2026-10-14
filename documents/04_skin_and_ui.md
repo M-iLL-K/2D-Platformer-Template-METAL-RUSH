@@ -200,6 +200,9 @@ const TIMELINE := "時間軸"
   `@export_group("跟主視覺配")`：`tone` 自動（圖平均亮度 0.6 以上配淺底）／深底／淺底、`main_color` 按鈕和亮色用第幾多的顏色。
   算好的 4 色用 `@export_storage var art_colors` 存進場景檔（存檔前重算），遊戲中不用讀圖；改選「自訂」時 4 個取色器帶著這 4 色。
   找不到主視覺、讀不到圖、不是標題畫面時黃色驚嘆號＋執行時警告，用預設配色。
+  U219：`palette` 加「跟標題一樣」（編號 12，標題畫面的下拉看不到），讀專案主場景（`application/run/main_scene`）的標題畫面，
+  生出來（不放進場景樹）拿它的整套顏色。結果所有畫面共用（static），遊戲中讀一次、編輯器裡每秒重讀（標題改了 HUD 跟著變）；
+  只跟顏色，`style`、字型不跟。主場景不是標題畫面時黃色驚嘆號＋執行時警告，用預設配色。測試用 `UIRoot.title_scene_override` 指定別的標題。
   U212：底框外圈疊一圈配色 accent 的外框（`PanelBox`：底框 `StyleBoxTexture`＋外框 `StyleBoxTexture`，外框圖 `Outline_*.png` 是底框形狀最外一圈），漫畫維持黑框。
  新選項都接在最後，既有場景存的編號不變。底框圖由 `tools/generate_ui_panels.py` 產生（程式畫的幾何框）。
 - HUD 底框（U210）：`HudTemplate` 的 `Rows` 包在 `Panel`（`PanelContainer`）裡，跟暫停選單同一個九宮格底框。預設 HUD（`StatsHud`）沒有任何一列要顯示時藏起底框。
