@@ -195,6 +195,11 @@ const TIMELINE := "時間軸"
   加 `palette`：海洋／森林／夕陽／黑白／萬聖節。
   U213：`palette` 加「自訂」（最後一個），`@export_group("自訂配色")` 4 個 `Color`（text／panel／button／accent），只在自訂時顯示；
   dim＝字往底框混 45%、hover＝按鈕變亮 15%（亮的按鈕改變暗）、pressed＝變暗 20%、back＝底框變暗 45%；字跟底框亮度差小於 0.3 時黃色驚嘆號＋執行時警告。
+  U218：`palette` 加「跟主視覺配」（編號 11，只有標題畫面的下拉看得到），`ArtPalette.gd` 從主視覺（`key_art`，空白用範本 KeyArt 的圖）
+  抓最多的三種色相（太灰太暗的不算），配出字／底框／按鈕／亮色：深底＝字亮 0.96、底框亮 0.15；淺底＝字亮 0.16、底框亮 0.96。
+  `@export_group("跟主視覺配")`：`tone` 自動（圖平均亮度 0.6 以上配淺底）／深底／淺底、`main_color` 按鈕和亮色用第幾多的顏色。
+  算好的 4 色用 `@export_storage var art_colors` 存進場景檔（存檔前重算），遊戲中不用讀圖；改選「自訂」時 4 個取色器帶著這 4 色。
+  找不到主視覺、讀不到圖、不是標題畫面時黃色驚嘆號＋執行時警告，用預設配色。
   U212：底框外圈疊一圈配色 accent 的外框（`PanelBox`：底框 `StyleBoxTexture`＋外框 `StyleBoxTexture`，外框圖 `Outline_*.png` 是底框形狀最外一圈），漫畫維持黑框。
  新選項都接在最後，既有場景存的編號不變。底框圖由 `tools/generate_ui_panels.py` 產生（程式畫的幾何框）。
 - HUD 底框（U210）：`HudTemplate` 的 `Rows` 包在 `Panel`（`PanelContainer`）裡，跟暫停選單同一個九宮格底框。預設 HUD（`StatsHud`）沒有任何一列要顯示時藏起底框。

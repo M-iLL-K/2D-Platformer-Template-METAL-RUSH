@@ -646,6 +646,18 @@ func _test_title_screen() -> void:
 		await _wait_frames(2)
 		if is_instance_valid(title):
 			_fail("%s 放進別的場景沒有自己拿掉" % p)
+	# 跟主視覺配（U218）：每個範本的主視覺都配得出顏色、字看得清楚；HUD 選了要警告
+	var art_palette: Script = load("res://ui/_scripts/ArtPalette.gd")
+	for p in ["res://ui/templates/_art/KeyArtPlaceholder.png", "res://levels/_starts/_W4SkinBox/art/Ansimuz/player_idle.png"]:
+		for tone in 3:
+			var c: PackedColorArray = art_palette.make_colors(art_palette.analyze(art_palette.read_image(load(p))), tone, 0)
+			if c.size() < 4 or absf(c[0].get_luminance() - c[1].get_luminance()) < 0.5:
+				_fail("跟主視覺配：%s 深淺 %d 配不出看得清楚的顏色" % [p.get_file(), tone])
+	var hud: UIRoot = (load("res://ui/templates/HudTemplate.tscn") as PackedScene).instantiate()
+	hud.palette = UIRoot.PALETTE_ART
+	if hud.art_problem() != UIRoot.ART_NOT_TITLE:
+		_fail("HUD 選了「跟主視覺配」沒有警告")
+	hud.free()
 	var menu_action: Script = load("res://ui/_scripts/MenuAction.gd")
 	var levels: PackedStringArray = menu_action.find_levels()
 	if levels.is_empty():

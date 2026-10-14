@@ -25,10 +25,14 @@ class_name UIRoot
 	set(value):
 		font_size = value
 		_apply_theme()
-## 配色：字、底色、按鈕、條的顏色一起換
-@export_enum("預設", "暗色", "亮色", "復古綠", "糖果", "海洋", "森林", "夕陽", "黑白", "萬聖節", "自訂") var palette: int = PALETTE_DEFAULT:
+## 配色：字、底色、按鈕、條的顏色一起換；標題畫面多一個「跟主視覺配」，從主視覺的圖自動配顏色
+@export_enum("預設", "暗色", "亮色", "復古綠", "糖果", "海洋", "森林", "夕陽", "黑白", "萬聖節", "自訂", "跟主視覺配") var palette: int = PALETTE_DEFAULT:
 	set(value):
+		if value == PALETTE_CUSTOM and palette == PALETTE_ART:
+			_copy_art_to_custom()
 		palette = value
+		if is_inside_tree():
+			_refresh_art_colors()
 		_apply_theme()
 		notify_property_list_changed()
 		update_configuration_warnings()
@@ -67,6 +71,20 @@ class_name UIRoot
 		accent_color = value
 		_on_custom_color_changed()
 
+@export_group("跟主視覺配")
+## 底框要深色還是淺色：自動（看主視覺整體是亮是暗）、深底（淺色的字）、淺底（深色的字）
+@export_enum("自動", "深底", "淺底") var tone: int = 0:
+	set(value):
+		tone = value
+		_on_art_changed()
+## 按鈕和亮色用主視覺裡哪個顏色：最多的、第二多的、第三多的（圖裡顏色不夠多時會一樣）
+@export_enum("最多的顏色", "第二多的顏色", "第三多的顏色") var main_color: int = 0:
+	set(value):
+		main_color = value
+		_on_art_changed()
+# 從主視覺算好的 4 個顏色（字、底框、按鈕、亮色），編輯器裡算好存進場景檔，遊戲中直接用（不用每次重讀圖）
+@export_storage var art_colors: PackedColorArray = PackedColorArray()
+
 @export_group("標題畫面")
 ## 遊戲名稱（這一格可以打字）：填了就蓋掉範本裡 GameName 的字；空白就用範本裡原本的字
 @export var game_name: String = "":
@@ -78,6 +96,7 @@ class_name UIRoot
 	set(value):
 		key_art = value
 		_apply_title()
+		_on_art_changed()
 ## 一行小字，例如「跳過 100 根尖刺，你做得到嗎？」（這一格可以打字）：填了就蓋掉範本裡 Hook 的字；空白就用範本裡原本的字
 @export var hook: String = "":
 	set(value):
@@ -91,6 +110,11 @@ const KIND_TITLE := 3
 
 const PALETTE_DEFAULT := 0
 const PALETTE_CUSTOM := 10
+const PALETTE_ART := 11
+const _ArtPalette := preload("res://ui/_scripts/ArtPalette.gd")
+const _ART_FIELDS := ["tone", "main_color"]
+const NO_KEY_ART := "palette 選「跟主視覺配」，但找不到主視覺的圖：把圖拖進 key_art（或範本裡的 KeyArt），先用預設配色"
+const ART_NOT_TITLE := "palette 的「跟主視覺配」只有標題畫面能用（其他畫面沒有主視覺），先用預設配色"
 # 自訂配色的字跟底框亮度差小於這個就提醒看不清楚
 const _MIN_CONTRAST := 0.3
 const _CUSTOM_FIELDS := ["text_color", "panel_color", "button_color", "accent_color"]
@@ -179,14 +203,16 @@ const _PALETTES := [
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_apply_process_mode()
+	if Engine.is_editor_hint() or art_colors.is_empty():
+		_refresh_art_colors()
 	_apply_theme()
 	_apply_title()
 	if Engine.is_editor_hint():
 		return
-	var contrast := custom_contrast_problem()
-	if contrast != "":
-		push_warning("[%s] %s" % [name, contrast])
-		printerr("⚠ [%s] %s" % [name, contrast])
+	for problem in [custom_contrast_problem(), art_problem()]:
+		if problem != "":
+			push_warning("[%s] %s" % [name, problem])
+			printerr("⚠ [%s] %s" % [name, problem])
 	_snap_containers(self)
 	if kind == KIND_TITLE:
 		_ready_title()
@@ -228,6 +254,12 @@ func _validate_property(property: Dictionary) -> void:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 	elif property.name in _CUSTOM_FIELDS and palette != PALETTE_CUSTOM:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
+	elif property.name in _ART_FIELDS and palette != PALETTE_ART:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+	elif property.name == "palette" and kind != KIND_TITLE and palette != PALETTE_ART:
+		var options: PackedStringArray = property.hint_string.split(",")
+		options.resize(PALETTE_ART)
+		property.hint_string = ",".join(options)
 
 # 這套 UI 放進關卡時（不是單獨編輯它的時候），把底下顯示零件的設定錯誤收集起來顯示在這裡：
 # 放進關卡的場景看不到裡面的子節點，錯誤要掛在看得到的這一層
@@ -239,6 +271,9 @@ func _get_configuration_warnings() -> PackedStringArray:
 	var contrast := custom_contrast_problem()
 	if contrast != "":
 		warnings.append(contrast)
+	var art := art_problem()
+	if art != "":
+		warnings.append(art)
 	if kind == KIND_TITLE:
 		if scene_root != null and scene_root != self:
 			warnings.append(TITLE_NOT_ALONE)
@@ -287,7 +322,7 @@ func _apply_title() -> void:
 	if name_label != null and game_name.strip_edges() != "":
 		name_label.text = game_name.strip_edges()
 	var art := _title_node("key_art") as TextureRect
-	if art != null and key_art != null:
+	if art != null and key_art != null and art.texture != key_art:
 		art.texture = key_art
 	var hook_label := _title_node("hook") as Label
 	if hook_label != null and hook.strip_edges() != "":
@@ -357,6 +392,55 @@ func _collect_warnings(node: Node, scene_root: Node, warnings: PackedStringArray
 func get_palette_color(role: String, fallback: Color) -> Color:
 	return _colors().get(role, fallback)
 
+# 「跟主視覺配」用不了的原因（不是標題畫面、找不到主視覺、讀不到圖），能用回傳空字串
+func art_problem() -> String:
+	if palette != PALETTE_ART:
+		return ""
+	if kind != KIND_TITLE:
+		return ART_NOT_TITLE
+	if _art_texture() == null:
+		return NO_KEY_ART
+	if art_colors.size() < 4:
+		return "讀不到主視覺「%s」的顏色，先用預設配色：換一張 PNG 或 JPG 圖試試" % _art_texture().resource_path.get_file()
+	return ""
+
+# 主視覺的圖：key_art 有填就用它，沒填就用範本裡 KeyArt 原本的圖
+func _art_texture() -> Texture2D:
+	if key_art != null:
+		return key_art
+	var art := _title_node("key_art") as TextureRect
+	return art.texture if art != null else null
+
+# 重新從主視覺算 4 個顏色（只在選了「跟主視覺配」的標題畫面算）
+func _refresh_art_colors() -> void:
+	if palette != PALETTE_ART or kind != KIND_TITLE:
+		return
+	var info := _ArtPalette.analyze(_ArtPalette.read_image(_art_texture()))
+	art_colors = _ArtPalette.make_colors(info, tone, main_color)
+
+# 主視覺、深淺、主色改了：重算顏色、重建 Theme、重新檢查
+func _on_art_changed() -> void:
+	if palette != PALETTE_ART or not is_inside_tree():
+		return
+	_refresh_art_colors()
+	_apply_theme()
+	update_configuration_warnings()
+
+# 從「跟主視覺配」改選「自訂」：4 個取色器帶著剛剛配好的顏色，學員從這裡開始微調
+func _copy_art_to_custom() -> void:
+	if art_colors.size() < 4:
+		return
+	text_color = art_colors[0]
+	panel_color = art_colors[1]
+	button_color = art_colors[2]
+	accent_color = art_colors[3]
+
+# 存檔前重算一次（範本裡 KeyArt 的圖被直接換掉時，存進去的顏色也跟著對）
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_EDITOR_PRE_SAVE and palette == PALETTE_ART:
+		_refresh_art_colors()
+		_apply_theme()
+
 # 自訂配色改了顏色：重建 Theme、重新檢查看不看得清楚
 func _on_custom_color_changed() -> void:
 	if palette == PALETTE_CUSTOM:
@@ -371,24 +455,28 @@ func custom_contrast_problem() -> String:
 		return ""
 	return "自訂配色的 text_color（字）跟 panel_color（底框）太接近，字可能看不清楚：把其中一個調亮、另一個調暗"
 
-# 從自訂的 4 個顏色算出整套顏色：次要字＝字往底框混一點，滑過／按下＝按鈕變亮／變暗，條的底＝底框變暗
-func _custom_colors() -> Dictionary:
-	var lighter := button_color.get_luminance() < 0.6
+# 從 4 個顏色（字、底框、按鈕、亮色）算出整套顏色：次要字＝字往底框混一點，滑過／按下＝按鈕變亮／變暗，條的底＝底框變暗
+func _colors_from(text: Color, panel: Color, button: Color, accent: Color) -> Dictionary:
+	var lighter := button.get_luminance() < 0.6
 	return {
-		"text": text_color,
-		"dim": text_color.lerp(Color(panel_color, 1.0), 0.45),
-		"panel": panel_color,
-		"button": button_color,
-		"hover": button_color.lightened(0.15) if lighter else button_color.darkened(0.12),
-		"pressed": button_color.darkened(0.2),
-		"accent": accent_color,
-		"back": Color(panel_color.darkened(0.45), 1.0),
+		"text": text,
+		"dim": text.lerp(Color(panel, 1.0), 0.45),
+		"panel": panel,
+		"button": button,
+		"hover": button.lightened(0.15) if lighter else button.darkened(0.12),
+		"pressed": button.darkened(0.2),
+		"accent": accent,
+		"back": Color(panel.darkened(0.45), 1.0),
 	}
 
-# 現在用的這套顏色：「預設」配色配像素復古以外的風格時用中性色
+# 現在用的這套顏色：「預設」配色配像素復古以外的風格時用中性色；「跟主視覺配」用不了時當成「預設」
 func _colors() -> Dictionary:
 	if palette == PALETTE_CUSTOM:
-		return _custom_colors()
+		return _colors_from(text_color, panel_color, button_color, accent_color)
+	if palette == PALETTE_ART:
+		if art_problem() == "":
+			return _colors_from(art_colors[0], art_colors[1], art_colors[2], art_colors[3])
+		return _NEUTRAL if style != STYLE_PIXEL else {}
 	var colors: Dictionary = _PALETTES[palette]
 	if colors.is_empty() and style != STYLE_PIXEL:
 		return _NEUTRAL
