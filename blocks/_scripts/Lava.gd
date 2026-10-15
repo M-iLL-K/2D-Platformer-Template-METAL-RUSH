@@ -7,13 +7,13 @@ extends Node2D
 # 大小用 width_tiles／height_tiles 拉，不要改 scale（皮的重複鋪滿才對得齊）。
 
 ## 寬度，單位是格（1 格 = 16 像素）
-@export_range(1, 40) var width_tiles: int = 1:
+@export var width_tiles: int = 1:
 	set(value):
 		width_tiles = value
 		_apply_size()
 
 ## 高度，單位是格（1 格 = 16 像素）
-@export_range(1, 40) var height_tiles: int = 1:
+@export var height_tiles: int = 1:
 	set(value):
 		height_tiles = value
 		_apply_size()
