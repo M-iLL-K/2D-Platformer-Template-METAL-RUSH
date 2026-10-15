@@ -98,7 +98,7 @@
 （名字隨便取，取 idle、run 這類常見名字會自動對上）→ 從 `juice/` 拖 `Juice_Animator` 到 **Player → Juice**，每個狀態在下拉選播哪段。
 還可以選落地、轉向、撞牆這類一次型動畫，調跑多快才算跑步，見 `零件手冊.md` §7.3。圖朝左畫的，在 `AnimatedSprite2D` 勾 **Flip H**。
 
-**換地形**：`art/default_tile.tres` 右鍵再製到 `_my/` → 照 `art/tile_template.png` 的格子畫自己的圖（每格 16×16，
+**換地形**：`art/terrain_tile.tres`（會自動接邊的地形圖塊）右鍵再製到 `_my/` → 照 `art/tile_template.png` 的格子畫自己的圖（每格 16×16，
 放大版說明看 `art/tile_template_guide.png`）→ 點再製的圖塊集，把圖拖進去取代原本的圖片 → 關卡的 `TileMapLayer` 換成自己的圖塊集。
 畫地形時在圖塊面板選「地形」（Terrains）分頁，選「地面」或「平台」用筆刷刷，邊會自動接好。
 用網路下載的圖塊（排法跟範本不一樣）：要自己設接邊規則，見 `零件手冊.md` §7.4「進階」。

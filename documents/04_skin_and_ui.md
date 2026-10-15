@@ -363,13 +363,14 @@ const TIMELINE := "時間軸"
 
 ## 8. 地形圖塊
 
-現在地形用 `art/default_tile.tres`（唯讀區），16×16 一格、`art/blocks.png`（128×64）。
+關卡預設地形用 `art/default_tile.tres`（唯讀區），16×16 一格、`art/blocks.png`（128×64，32 格純色塊，全部實心碰撞）。
+（講師決定，U220）U184 的圖塊另存成 `art/terrain_blocks.png`＋`art/terrain_tile.tres`，`default_tile.tres`／`blocks.png` 還原成純色塊，已經用純色塊畫的地圖不受影響。
 
-- 提供 `art/tile_template.png`：跟 `blocks.png` 同樣格子配置的範本圖，每一格標好用途（實心、平台頂、裝飾…）。
+- 提供 `art/tile_template.png`：跟 `terrain_blocks.png` 同樣格子配置的範本圖，每一格標好用途（實心、平台頂、裝飾…）。
   （講師決定，U184）格子重新規劃成地面 16 格（3×3 以 (3,1) 為中心＋柱子、橫條、單獨一格）、平台 4 格（單向碰撞）、裝飾 12 格（沒有碰撞），
   設好 Godot 內建 Terrain「地面」「平台」：學員在圖塊面板的「地形」分頁用筆刷刷，邊會自動接好。
   範本上紅線＝露在外面的邊、藍線＝平台站的那一面、淡黃＝裝飾；`art/tile_template_guide.png` 是放大 8 倍的中文說明圖。
-- 學員流程：再製 `default_tile.tres` 到 `_my/` → 把自己照範本畫好的圖拖進去取代 atlas 圖片 → 關卡的 `TileMapLayer` 換成自己的圖塊。
+- 學員流程：再製 `terrain_tile.tres` 到 `_my/` → 把自己照範本畫好的圖拖進去取代 atlas 圖片 → 關卡的 `TileMapLayer` 換成自己的圖塊。
   因為格子位置一樣，碰撞形狀不用重畫。
 - 背景圖：`skins/SkinBackground.tscn`（U190，講師決定改成做零件）。內部生 `Parallax2D`＋`Sprite2D`，自己 `z_index = -100`（不相對），永遠在最底下。
   `fill_style` 只放一張（在節點位置）／重複鋪滿（預設）／拉伸蓋滿；後兩種蓋住所有 `Room` 的範圍（沒有 Room 用 `TileMapLayer` 畫到的範圍），四周多留 2 格，

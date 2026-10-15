@@ -1032,6 +1032,9 @@
 	  （驗證：`tests/ui/TitleColorFollowTest.tscn`）
 　　→ 實作：讀專案主場景的標題畫面拿顏色（不管是哪一套、自訂、跟主視覺配都跟）；只跟顏色，style、字型各自選；
 　　　主場景不是標題畫面時黃色驚嘆號＋執行時警告、用預設配色；「跟主視覺配」只在標題的下拉、「跟標題一樣」只在其他畫面的下拉
+- [x] U220 `art/blocks.png`、`art/default_tile.tres` 還原成 U184 之前的 32 格純色塊（全部實心碰撞、uid 不變）；U184 的圖塊另存成 `art/terrain_blocks.png`＋`art/terrain_tile.tres`（地形「地面」「平台」、自動接邊）
+	  （驗證：任一關卡（例如 `levels/Showroom.tscn`）照舊是綠色純色塊；`tests/skins/TileTemplateTest.tscn` 上面那片照舊有草皮、平台、裝飾）
+　　→ 講師決定：已經有學員用純色塊畫地圖，`default_tile.tres` 要保持純色塊，新的圖塊另存；README、速查表、零件手冊 §7.4、04 §8 的「再製」改指向 `terrain_tile.tres`
 ## 之後再做（構想，還沒排進單元）
 
 - 手機觸控按鈕：拖進關卡的虛擬按鈕組件，下拉選它代表哪個動作，只在觸控裝置上顯示（講師決定先放待做，U201 時提出）
