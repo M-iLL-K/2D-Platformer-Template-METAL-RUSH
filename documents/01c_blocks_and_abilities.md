@@ -90,7 +90,7 @@
 | 崩塌地板 | `CrumbleFloor.tscn` | 實心 | `break_delay`（碎裂延遲秒數）、`respawn_time`（重生秒數，0 為不重生）、`triggered_by`（只有玩家／任何物體） | `crumbled` |
 | 單向平台 | `OneWayPlatform.tscn` | 實心（單向） | `width_tiles`（寬度格數） | 無 |
 | 不反彈方塊 | `NoBounceBlock.tscn` | 實心 | `width_tiles`、`height_tiles`（寬高格數，編輯器即時顯示） | 無 |
-| 岩漿 | `Lava.tscn` | 實心 | `damage_per_second`（每秒扣血）、`instant_kill`（即死）、`start_on`（一開始就開；關著時是普通地板）；可連接 `activate`、`deactivate`、`toggle` | 無 |
+| 岩漿 | `Lava.tscn` | 實心 | `width_tiles`／`height_tiles`（大小，格數；U221）、`damage_per_second`（每秒扣血）、`instant_kill`（即死）、`start_on`（一開始就開；關著時是普通地板）；可連接 `activate`、`deactivate`、`toggle` | 無 |
 | 可破壞方塊 | `Breakable.tscn` | 實心 | `durability`（耐久次數）、`respawn_time`（重生秒數，0 為不重生）、`break_by_impact`（高速撞擊也能破壞）、`impact_speed`（撞擊速度門檻） | `broken` |
 | 開關方塊 | `SwitchBlock.tscn` | 實心 | `color`（紅／藍） | 無 |
 

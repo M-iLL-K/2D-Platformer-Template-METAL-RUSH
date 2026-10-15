@@ -1035,6 +1035,9 @@
 - [x] U220 `art/blocks.png`、`art/default_tile.tres` 還原成 U184 之前的 32 格純色塊（全部實心碰撞、uid 不變）；U184 的圖塊另存成 `art/terrain_blocks.png`＋`art/terrain_tile.tres`（地形「地面」「平台」、自動接邊）
 	  （驗證：任一關卡（例如 `levels/Showroom.tscn`）照舊是綠色純色塊；`tests/skins/TileTemplateTest.tscn` 上面那片照舊有草皮、平台、裝飾）
 　　→ 講師決定：已經有學員用純色塊畫地圖，`default_tile.tres` 要保持純色塊，新的圖塊另存；README、速查表、零件手冊 §7.4、04 §8 的「再製」改指向 `terrain_tile.tres`
+- [x] U221 岩漿加 `width_tiles`／`height_tiles`（1～40 格，預設 1×1 跟原本一樣）：碰撞、偵測範圍、色塊跟著變，皮的重複鋪滿／拉伸蓋滿自動對齊整塊；
+	  改了 scale 時黃色驚嘆號＋執行時中文警告（驗證：`tests/skins/LavaSizeSkinTest.tscn`）
+　　→ 講師決定：學員要大塊岩漿＋圖重複鋪滿，改 scale 會把皮一起放大；照 NoBounceBlock／OneWayPlatform 用格數拉大小，不做「皮抵銷 scale」
 ## 之後再做（構想，還沒排進單元）
 
 - 手機觸控按鈕：拖進關卡的虛擬按鈕組件，下拉選它代表哪個動作，只在觸控裝置上顯示（講師決定先放待做，U201 時提出）
