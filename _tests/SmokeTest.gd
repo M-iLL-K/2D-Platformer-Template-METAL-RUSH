@@ -117,6 +117,8 @@ func _run_all_steps() -> void:
 	# 10. W4：blocks/ 裡每個有色塊的零件輪流套 Skin／SkinAnimated，開關、打、重置一輪
 	await _test_skins()
 	await _assert_can_move("零件套皮測試")
+	await _test_skin_share()
+	await _assert_can_move("共用皮測試")
 
 	# 11. W4：三個 UI 範本跟 W4_SkinBox 的示範 UI 都接上去（直接放進場景、也放進 UISettings），數值變化一輪
 	await _test_ui_templates()
@@ -595,6 +597,65 @@ func _test_skins() -> void:
 		_fail("blocks/ 裡找不到任何有色塊的零件，套皮測試沒有測到東西")
 	if not is_instance_valid(_player):
 		_fail("套皮測試時 Player 消失了")
+
+# 共用皮：每種零件放一個 SkinShare（Skin、SkinAnimated、沒放皮、重複的輪流），再放零件進來開關一輪；
+# 有一個零件自己掛皮（要用自己的）；不崩潰、Player 還在
+func _test_skin_share() -> void:
+	var tex: Texture2D = preload("res://art/white_block.png")
+	var frames := _make_frames(["平常", "啟動", "走路"])
+	var share_scene: PackedScene = load("res://skins/SkinShare.tscn")
+	var placed: Array[Node] = []
+	var index := 0
+	for path in SkinShare.KINDS:
+		var share: Node2D = share_scene.instantiate()
+		share.target = SkinShare.KINDS[path]
+		if index % 3 == 0:
+			var skin: Node = load("res://skins/Skin.tscn").instantiate()
+			skin.texture_normal = tex
+			skin.fill_style = index % 3
+			share.add_child(skin)
+		elif index % 3 == 1:
+			var anim: Node = load("res://skins/SkinAnimated.tscn").instantiate()
+			anim.sprite_frames = frames
+			share.add_child(anim)
+		add_child(share)
+		placed.append(share)
+		if index % 5 == 0:
+			var twin: Node2D = share_scene.instantiate()
+			twin.target = share.target
+			add_child(twin)
+			placed.append(twin)
+		index += 1
+	index = 0
+	for path in _scan_scenes("res://blocks"):
+		var block: Node = (load(path) as PackedScene).instantiate()
+		if SkinLink.block_visual(block) == null:
+			block.free()
+			continue
+		if index == 0:
+			var own: Node = load("res://skins/Skin.tscn").instantiate()
+			own.texture_normal = tex
+			block.add_child(own)
+		if block is Node2D:
+			block.position = Vector2(3000 + index * 40, 0)
+		add_child(block)
+		placed.append(block)
+		index += 1
+		await _wait_frames(3)
+		for method in ["deactivate", "activate", "toggle"]:
+			if block.has_method(method):
+				block.call(method)
+		if block.has_method("take_hit"):
+			block.take_hit(1, Vector2.ZERO, self)
+		if block.has_method("reset"):
+			block.reset()
+		await _wait_frames(3)
+	for n in placed:
+		if is_instance_valid(n):
+			n.queue_free()
+	await _wait_frames(3)
+	if not is_instance_valid(_player):
+		_fail("共用皮測試時 Player 消失了")
 
 # 三個 UI 範本跟 W4_SkinBox 的示範 UI：一輪直接放進場景（接法 B），一輪放進 UISettings（接法 A），
 # 中間讓數值變化（扣血、補血、撿金幣），HUD 的 hud_background 兩種輪一次，最後全部拿掉；不崩潰、Player 還在
