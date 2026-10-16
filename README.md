@@ -96,6 +96,10 @@
 標題要有音樂：音樂檔拖進最上層的 `music`（換關時自動淡出）。按鈕要有音效：最上層「按鈕音效」群組的 `press_sound`（按下）、`select_sound`（選到）下拉選一個，
 整個畫面的按鈕都會響；某顆想不一樣就在那顆按鈕（`MenuAction`）的「音效」群組自己選。暫停選單、過關畫面也一樣。
 
+**手機也能玩**：從 `ui/` 拖 `TouchControls` 進關卡，畫面上就有左、右、跳、暫停四顆手機按鈕（電腦上會自己藏起來，`show_on` 選「一直顯示」可以用滑鼠點來測）。
+要攻擊鍵就另外拖一顆 `TouchButton`，`press` 選「鍵盤按鍵」、`key` 選跟能力一樣的鍵。想用搖桿走路：拖 `TouchStick`，套件開「可編輯的子節點」把 Left、Right 的「可見」取消勾。
+讓玩家自己決定要不要手機按鈕：把 `TouchSwitch` 拖進標題畫面或暫停選單（選的結果會記住）。
+
 **換角色**：Player → Visual 底下的 `Sprite2D` 換成 `AnimatedSprite2D`，在 Sprite Frames 做站著、跑步、跳起、落下的動畫
 （名字隨便取，取 idle、run 這類常見名字會自動對上）→ 從 `juice/` 拖 `Juice_Animator` 到 **Player → Juice**，每個狀態在下拉選播哪段。
 還可以選落地、轉向、撞牆這類一次型動畫，調跑多快才算跑步，見 `零件手冊.md` §7.3。圖朝左畫的，在 `AnimatedSprite2D` 勾 **Flip H**。

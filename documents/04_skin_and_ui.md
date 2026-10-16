@@ -230,6 +230,23 @@ const TIMELINE := "時間軸"
 
 ---
 
+### 4.4 手機操控（講師決定，U226～U231）
+
+Input Map 沒有「觸控」可以加，所以手機操控做成畫面上的虛擬按鈕，**假裝按鍵**：角色移動、跳躍、能力、機制卡都是問「這個鍵有沒有按著」，其他程式都不用改。
+
+| 零件 | 繼承 | 做什麼 |
+|---|---|---|
+| `TouchButton` | `Control` | U226。`press` 下拉：左／右／上／下／跳／暫停／鍵盤按鍵（選了才出現 `key`）。左右上下跳用 `Input.action_press`，暫停送一下 Esc，鍵盤按鍵送假的 `InputEventKey`（能力、機制卡用 `bind_key` 綁的鍵也按得到）。`corner`、`distance_x`／`distance_y`、`button_size`、`opacity`、`texture`（空白畫圓角框＋箭頭或字）。在 `_input` 自己處理 `InputEventScreenTouch`／`ScreenDrag`，多指同時按、滑動換按；觸控模擬出來的滑鼠事件（`DEVICE_ID_EMULATION`）不重複算；暫停鈕 `PROCESS_MODE_ALWAYS`，其他按鈕暫停時放開；看不到就不收輸入 |
+| `TouchControls` | `Control` | U227。套件：Left、Right、Jump、Pause 四顆 `TouchButton` 擺好（子按鈕 `show_on` 一直顯示，由套件決定整組要不要顯示）；`show_on`、`opacity` 管整組 |
+| `TouchStick` | `Control` | U228。搖桿：左右用 `Input.action_press(動作, 力道)`（Player 用 `get_axis`，推一半半速）；上下推超過一半才算；`dead_zone`、`use_up_down`、`stick_size`；只放開自己按住的動作 |
+| `TouchSwitch` | `HBoxContainer` | U231。玩家選「自動／顯示／隱藏」；`style` 勾選框／下拉選單／不顯示（只當接口）；接口 `set_on`／`set_off`／`show_controls`／`hide_controls`／`auto_controls`／`toggle_controls` |
+
+`show_on`：只在觸控裝置（`DisplayServer.is_touchscreen_available()`）／一直顯示／摸到螢幕才出現（U230）。
+自動載入 `TouchSettings`：記住「現在是不是在用觸控」（碰螢幕算、按鍵盤或手把不算；手機按鈕送假按鍵前先 `expect_fake_key()`，收到時不算），
+以及玩家在 `TouchSwitch` 選的 `mode`（存 `user://settings.cfg` 的 `[touch] mode`）；狀態變了發 `changed`，三種零件都聽它更新顯示。
+學員自己把按鈕「可見」取消勾的，一直藏著（套件藏 Left、Right 換搖桿靠這個）。
+不用內建 `TouchScreenButton`：它的動作名稱要打字，而且是 Node2D 會跟著鏡頭跑。
+
 ## 5. 範本場景 `ui/templates/`
 
 | 範本 | `UIRoot.kind` | 內容（預設長相＝現在的樣子） |
