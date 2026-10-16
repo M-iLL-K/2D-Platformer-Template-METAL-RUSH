@@ -99,7 +99,9 @@ func _refresh_shown() -> void:
 static func print_hidden_reason(choice: int, label: String) -> void:
 	if TouchSettings.should_show(choice):
 		return
-	if choice == TouchSettings.SHOW_AUTO:
+	if TouchSettings.mode == TouchSettings.MODE_HIDE:
+		print("[%s] 玩家在手機按鈕開關選了「隱藏」，先藏起來（設定存在設定檔，選「自動」或「顯示」就會回來）" % label)
+	elif choice == TouchSettings.SHOW_AUTO:
 		print("[%s] 選了「摸到螢幕才出現」：手指碰到螢幕才會顯示（想在電腦上測，把 show_on 改成「一直顯示」）" % label)
 	else:
 		print("[%s] 這台裝置沒有觸控螢幕，先藏起來（想在電腦上測，把 show_on 改成「一直顯示」）" % label)
