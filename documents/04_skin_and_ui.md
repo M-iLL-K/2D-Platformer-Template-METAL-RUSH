@@ -163,7 +163,7 @@ const TIMELINE := "時間軸"
 
 | 零件 | 繼承 | 做什麼 |
 |---|---|---|
-| `MenuAction` | `Button` | `action` 下拉：繼續遊戲／整關重來／離開遊戲／開始遊戲／回標題（後兩個 U189）。按下去就執行，不用連 `pressed`。「離開遊戲」在 Web 版自動藏起來；「回標題」在主場景不是標題畫面、或現在就在標題上時自動藏起來；「開始遊戲」多一格 `level` 下拉（掃 `_my/`、`levels/_starts/` 的關卡，排除最上層是 `UIRoot` 的場景；存去掉 `res://` 的路徑，另外記 UID，改名搬家還找得到；沒選、找不到時黃色驚嘆號＋中文警告） |
+| `MenuAction` | `Button` | `action` 下拉：繼續遊戲／整關重來／離開遊戲／開始遊戲／回標題（後兩個 U189）。按下去就執行，不用連 `pressed`。「離開遊戲」在 Web 版自動藏起來；「回標題」在主場景不是標題畫面、或現在就在標題上時自動藏起來；「開始遊戲」多一格 `level` 下拉（掃 `_my/`、`levels/_starts/` 的關卡，排除最上層是 `UIRoot` 的場景；存去掉 `res://` 的路徑，另外記 UID，改名搬家還找得到；沒選、找不到時黃色驚嘆號＋中文警告）。U224：「音效」群組 `press_sound`／`select_sound`（跟畫面一樣／無／內建音效／自訂），選「跟畫面一樣」以外的自己播，`UIRoot` 就跳過它 |
 | `VolumeSlider` | `HSlider` | `bus` 下拉：主音量／音效／音樂。跟現在暫停選單的拉桿同一套存檔（`user://settings.cfg`） |
 | `ClearStat` | `Label` | 過關畫面專用：`stat` 下拉：用了幾秒／死了幾次／製作者的話。照 `ClearScreen` 的勾選決定要不要顯示 |
 
@@ -254,6 +254,11 @@ const TIMELINE := "時間軸"
   欄位有填但節點被刪掉時黃色驚嘆號。換場景由 `PauseMenu.change_scene()` 處理：關掉選單、解除暫停、`Engine.time_scale = 1`，
   先拿掉舊場景，再把 `Stats`、`HudData`、`RespawnMemory`、`StatsHud` 歸零，最後放進新場景（新場景的 `ValueSettings` 才套得上）。
   標題畫面上 Esc 不開暫停選單。`ConnectionValidator` 換場景後也檢查新場景。
+- 標題音樂（U223）：`UIRoot` 的 `music`、`music_volume` 只在標題畫面顯示；BGM 匯流排、淡入、播完重播。
+  `PauseMenu.change_scene()` 換場景前呼叫 `UIRoot.hand_off_music()`，播放器交給 `PauseMenu` 淡出後拿掉，跟新關卡的 `Juice_BGM` 交叉淡入淡出。
+- 按鈕音效（U224）：`UIRoot`「按鈕音效」群組（HUD 不顯示）往下找所有 `BaseButton` 接上按下、選到的音效；
+  播放器由 `UIRoot.play_ui_sound()` 放在場景樹最上層（SFX 匯流排、暫停中照播、播完拿掉），換場景不會被切掉。
+  畫面剛出現（`_ready`、`visibility_changed`）的 0.2 秒內、滑鼠點下去順便選到的不播「選到」。不從 `UIRoot` 呼叫 `PauseMenu`（會循環載入）。
 - 暫停選單、過關畫面的內容放在底框 `Center/Panel`（`PanelContainer`）裡（U188b）：底色跟著 `palette`，「預設」配色是深色半透明，
   遊戲畫面花的時候字也看得清楚。學員之前已經再製出去的場景不會跟著改。
 - 暫停、過關畫面的「暫停中也要能動」（`process_mode = ALWAYS`）由 `UIRoot` 自己設好，學員不用管。
