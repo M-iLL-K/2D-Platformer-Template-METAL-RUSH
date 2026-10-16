@@ -91,6 +91,13 @@ func turn_off(..._args: Array) -> void:
 	if _is_continuous():
 		visible = false
 
+# 依 on 打開或關掉這個 Juice：勾選框（CheckBox、CheckButton）的 toggled 訊號連到這裡，勾著就開、取消勾就關
+func set_on(on: bool, ..._args: Array) -> void:
+	if on:
+		turn_on()
+	else:
+		turn_off()
+
 # Juice 組件在這裡做初始化，例如設定初始狀態
 func _on_setup() -> void:
 	pass
