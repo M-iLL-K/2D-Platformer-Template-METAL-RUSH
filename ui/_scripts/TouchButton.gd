@@ -44,8 +44,9 @@ extends Control
 	set(value):
 		opacity = value
 		queue_redraw()
-## 什麼時候顯示：只在手機、平板這類觸控裝置；或一直顯示（在電腦上可以用滑鼠點來測）
-@export_enum("只在觸控裝置", "一直顯示") var show_on: int = 0
+## 什麼時候顯示：只在手機、平板這類觸控裝置；一直顯示（在電腦上可以用滑鼠點來測）；
+## 或摸到螢幕才出現（手指碰到螢幕就出現、改按鍵盤又藏起來，有觸控螢幕的筆電用鍵盤玩也不會擋畫面）
+@export_enum("只在觸控裝置", "一直顯示", "摸到螢幕才出現") var show_on: int = 0
 ## 按鈕的圖：從檔案系統把圖片拖進來；空白就畫預設的圓角框＋箭頭或字
 @export var texture: Texture2D:
 	set(value):
@@ -55,7 +56,6 @@ extends Control
 const PRESS_JUMP := 4
 const PRESS_PAUSE := 5
 const PRESS_KEY := 6
-const SHOW_TOUCH_ONLY := 0
 # 左、右、上、下、跳對應的 Input Map 動作
 const _ACTIONS := [&"move_left", &"move_right", &"move_up", &"move_down", &"jump"]
 const _LAYER := 5
@@ -67,6 +67,7 @@ const _BOX_COLOR := Color(0.1, 0.1, 0.15, 0.8)
 const _BOX_DOWN_COLOR := Color(0.45, 0.45, 0.55, 0.9)
 const _LINE_COLOR := Color(1, 1, 1, 0.9)
 
+var _hidden_by_student: bool = false   # 學員自己把「可見」取消勾
 var _touch: int = _NO_TOUCH   # 按著這顆的是哪根手指（_MOUSE 是滑鼠），沒人按是 _NO_TOUCH
 
 # 擺到角落；遊戲中檢查要不要顯示、移進 CanvasLayer、設定暫停時要不要繼續收輸入
@@ -77,11 +78,10 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		set_process_input(false)
 		return
-	if show_on == SHOW_TOUCH_ONLY and not DisplayServer.is_touchscreen_available():
-		visible = false
-		set_process_input(false)
-		print("[%s] 這台裝置沒有觸控螢幕，手機按鈕先藏起來（想在電腦上測，把 show_on 改成「一直顯示」）" % name)
-		return
+	_hidden_by_student = not visible
+	TouchSettings.changed.connect(_refresh_shown)
+	_refresh_shown()
+	print_hidden_reason(show_on, name)
 	process_mode = Node.PROCESS_MODE_ALWAYS if press == PRESS_PAUSE else Node.PROCESS_MODE_PAUSABLE
 	if press < PRESS_PAUSE and not InputMap.has_action(_ACTIONS[press]):
 		var message := "Input Map 裡找不到「%s」，這顆按鈕按了不會有反應：到「專案設定 → Input Map」把它加回來" % _ACTIONS[press]
@@ -90,6 +90,19 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_place)
 	if not (get_parent() is CanvasLayer or get_parent() is Control):
 		_move_to_layer.call_deferred()
+
+# 照 show_on 和玩家現在用什麼裝置，決定要不要顯示（學員自己把「可見」取消勾的就一直藏著）
+func _refresh_shown() -> void:
+	visible = not _hidden_by_student and TouchSettings.should_show(show_on)
+
+# 一開始藏起來的話，在輸出面板說為什麼；套件、搖桿也用這個
+static func print_hidden_reason(choice: int, label: String) -> void:
+	if TouchSettings.should_show(choice):
+		return
+	if choice == TouchSettings.SHOW_AUTO:
+		print("[%s] 選了「摸到螢幕才出現」：手指碰到螢幕才會顯示（想在電腦上測，把 show_on 改成「一直顯示」）" % label)
+	else:
+		print("[%s] 這台裝置沒有觸控螢幕，先藏起來（想在電腦上測，把 show_on 改成「一直顯示」）" % label)
 
 # 離開場景、遊戲暫停（暫停鈕以外）、被藏起來時，按著的鍵要放開，不然角色會一直走
 func _notification(what: int) -> void:
@@ -184,6 +197,7 @@ func _send_key(which: Key, down: bool) -> void:
 	event.keycode = which
 	event.physical_keycode = which
 	event.pressed = down
+	TouchSettings.expect_fake_key(which)
 	Input.parse_input_event(event)
 
 # 依角落和距離擺到畫面上（編輯器裡照專案設定的畫面大小擺）
