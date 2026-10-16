@@ -110,6 +110,8 @@ func _get_configuration_warnings() -> PackedStringArray:
 
 # 手指（或滑鼠左鍵）按下、滑動、放開：按在這顆上面就按住，離開或放開就放開
 func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
 		if touch.pressed:
