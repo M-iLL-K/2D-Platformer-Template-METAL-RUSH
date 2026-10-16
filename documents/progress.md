@@ -1073,9 +1073,12 @@
 	  （驗證：`tests/ui/TouchControlsTest.tscn`）
 　　→ 實作：套件只有 `show_on`、`opacity` 兩個欄位，管整組（opacity 會蓋過每顆自己的）；四顆的位置、大小開「可編輯的子節點」各自調。
 　　　套件藏起來時底下的按鈕不收輸入（TouchButton 看不到就不收，學員自己把按鈕藏起來也一樣）；電腦上只印一行「沒有觸控螢幕」
-- [ ] U228 手機搖桿 `ui/TouchStick`：拖進關卡出現在角落，手指推多遠就走多快（類比），往上、下推也會按住上、下；
+- [x] U228 手機搖桿 `ui/TouchStick`：拖進關卡出現在角落，手指推多遠就走多快（類比），往上、下推也會按住上、下；
 	  `corner`／距離／大小／透明度跟 TouchButton 一樣；`dead_zone` 拉桿；可以拿來取代套件的左右鍵
 	  （驗證：`tests/ui/TouchStickTest.tscn`）
+　　→ 實作：左右用 `Input.action_press(動作, 力道)`，Player 本來就用 `get_axis`，推一半就半速走；上下推超過一半才算（跟 dead_zone 取大的），斜推不會誤按下；
+　　　手指按在圓圈裡才抓住，抓住後滑出圓圈照樣在推，放開才放掉；只放開搖桿自己按住的動作，不會把鍵盤按著的一起放掉；`use_up_down` 勾選框可以關掉上下。
+　　　取代套件左右鍵：套件開「可編輯的子節點」把 Left、Right 的「可見」取消勾（藏起來的按鈕不收輸入，U227）
 - [x] U229 JuiceBase 加 `set_off(off)`：跟 `set_on` 相反，勾著就 `turn_off()`、取消勾就 `turn_on()`；勾選框的字寫「關掉畫面震動」、預設不勾時用這個
 	  （驗證：`tests/juice/JuiceSetOffTest.tscn`：跟 JuiceSetOnTest 一樣，勾選框改成「關掉畫面震動」、toggled 連到 set_off）
 　　→ 講師決定：學員問怎麼改成「勾選才關閉」；訊號連線視窗沒辦法把 true／false 反過來，所以多一個 set_off 跟 set_on 成對
