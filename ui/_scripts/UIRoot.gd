@@ -104,6 +104,10 @@ class_name UIRoot
 	set(value):
 		hook = value
 		_apply_title()
+## 標題畫面的背景音樂：從檔案系統把 .ogg／.mp3／.wav 拖進來（建議放在 _my/ 底下）；空白就不播。按「開始遊戲」換關時自動淡出
+@export var music: AudioStream
+## 背景音樂的音量，1 是原本的大小
+@export_range(0.0, 1.0) var music_volume: float = 0.6
 
 const KIND_HUD := 0
 const KIND_PAUSE_MENU := 1
@@ -122,6 +126,9 @@ static var _title_cache_problem := ""
 static var _title_cache_time := -1
 # 「跟標題一樣」上一次套用的顏色，編輯器裡比對標題有沒有改
 var _applied_title_colors := {}
+# 標題音樂的播放器和淡入淡出（沒放音樂就是 null）
+var _music_player: AudioStreamPlayer = null
+var _music_tween: Tween = null
 const _ArtPalette := preload("res://ui/_scripts/ArtPalette.gd")
 const _ART_FIELDS := ["tone", "main_color"]
 const NO_KEY_ART := "palette 選「跟主視覺配」，但找不到主視覺的圖：把圖拖進 key_art（或範本裡的 KeyArt），先用預設配色"
@@ -184,7 +191,13 @@ const _KIND_NAMES := ["HUD", "暫停選單", "過關畫面", "標題畫面"]
 const _SCRIPT_PATH := "res://ui/_scripts/UIRoot.gd"
 # 標題畫面的欄位 -> 範本裡對應的節點名稱
 const _TITLE_NODES := { "game_name": "GameName", "key_art": "KeyArt", "hook": "Hook" }
-const TITLE_NOT_ALONE := "標題畫面要自己一個場景（設為主場景），不能放進關卡；從 ui/templates/ 再製一份到 _my/，右鍵「設為主場景」"
+# 標題畫面才有的音樂欄位
+const _TITLE_MUSIC_FIELDS := ["music", "music_volume"]
+# 標題音樂淡入、換關時淡出要幾秒
+const _MUSIC_FADE := 1.0
+# 淡到這個音量就算聽不到（線性音量）
+const _SILENT := 0.0001
+const TITLE_NOT_ALONE :="標題畫面要自己一個場景（設為主場景），不能放進關卡；從 ui/templates/ 再製一份到 _my/，右鍵「設為主場景」"
 
 # 每套配色的顏色：text 字、dim 次要的字、panel 底色、button 按鈕、hover 滑過、pressed 按下、accent 條和拉桿、back 條的底
 const _PALETTES := [
@@ -250,6 +263,7 @@ func _ready() -> void:
 func _ready_title() -> void:
 	if get_parent() == get_tree().root:
 		_focus_first_button.call_deferred(self)
+		_start_music()
 		return
 	push_warning("[%s] %s" % [name, TITLE_NOT_ALONE])
 	printerr("⚠ [%s] %s" % [name, TITLE_NOT_ALONE])
@@ -260,7 +274,7 @@ func _ready_title() -> void:
 func _validate_property(property: Dictionary) -> void:
 	if property.name == "theme":
 		property.usage = PROPERTY_USAGE_NONE
-	elif _TITLE_NODES.has(property.name) and kind != KIND_TITLE:
+	elif (_TITLE_NODES.has(property.name) or property.name in _TITLE_MUSIC_FIELDS) and kind != KIND_TITLE:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 	elif property.name == "hud_background" and kind != KIND_HUD:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
@@ -320,6 +334,48 @@ func _focus_first_button(node: Node) -> bool:
 		if _focus_first_button(child):
 			return true
 	return false
+
+# 標題畫面的背景音樂：有放音樂檔就走 BGM 匯流排（音樂拉桿管得到）淡入播放，播完自己從頭再播
+func _start_music() -> void:
+	if music == null:
+		return
+	_music_player = AudioStreamPlayer.new()
+	_music_player.name = "TitleMusic"
+	_music_player.bus = &"BGM"
+	_music_player.stream = music
+	_music_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	_music_player.finished.connect(_music_player.play)
+	add_child(_music_player)
+	_set_music_level(0.0, _music_player)
+	_music_player.play()
+	_music_tween = _fade_music(_music_player, 0.0, music_volume)
+	print("[%s] 開始播放標題音樂" % name)
+
+# 換場景時 PauseMenu 呼叫：把還在播的標題音樂交給 keeper（不會跟著標題畫面一起消失），淡出之後拿掉
+func hand_off_music(keeper: Node) -> void:
+	if _music_player == null or not is_instance_valid(_music_player):
+		return
+	var player := _music_player
+	_music_player = null
+	if _music_tween != null and _music_tween.is_valid():
+		_music_tween.kill()
+	player.finished.disconnect(player.play)
+	# 播放器換位置時會停掉，記下播到哪裡、換好之後接著播
+	var at := player.get_playback_position()
+	var level := db_to_linear(player.volume_db)
+	player.reparent(keeper)
+	player.play(at)
+	_fade_music(player, level, 0.0).tween_callback(player.queue_free)
+
+# 把播放器的音量從 from 淡到 to（線性 0～1），用真實時間，頓幀、暫停都不影響
+func _fade_music(player: AudioStreamPlayer, from: float, to: float) -> Tween:
+	var tween := player.create_tween().set_ignore_time_scale(true)
+	tween.tween_method(_set_music_level.bind(player), from, to, _MUSIC_FADE)
+	return tween
+
+# 設定播放器的音量（線性 0～1）
+func _set_music_level(level: float, player: AudioStreamPlayer) -> void:
+	player.volume_db = linear_to_db(maxf(level, _SILENT))
 
 # 標題畫面的欄位填了，範本裡卻找不到對應的節點（被刪掉或改名）時的警告
 func _title_warnings() -> PackedStringArray:

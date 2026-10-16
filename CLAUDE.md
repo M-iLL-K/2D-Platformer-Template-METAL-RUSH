@@ -108,6 +108,7 @@ Claude Code 在這個專案裡的所有對話回覆、進度回報、驗收結�
 **取色器例外（講師決定，U213）**：`UIRoot.text_color`／`panel_color`／`button_color`／`accent_color`（`Color`）只在 `palette` 選「自訂」時出現，學員用滑鼠點色塊選顏色、不打字；
 預設值就能用，字跟底框亮度太接近時黃色驚嘆號＋執行時中文警告。
 `UIRoot.key_art`（`Texture2D`，標題畫面的主視覺）同屬資源欄位例外：空白就用範本裡原本的圖，不警告（見 `documents/progress.md` U189）。
+`UIRoot.music`（`AudioStream`，標題畫面的背景音樂）同屬資源欄位例外：空白就不播，不警告（見 `documents/progress.md` U223）。
 `Ability_Ranged.bullet_texture`／`EnemyShooter.bullet_texture`／`Ability_Melee.slash_texture`（`Texture2D`）同屬資源欄位例外：學員把子彈、揮擊的圖拖進來；
 空白就照舊顯示色塊，不警告（見 `documents/04_skin_and_ui.md` §6.3）。
 
@@ -154,7 +155,7 @@ Claude Code 在這個專案裡的所有對話回覆、進度回報、驗收結�
 - ❌ 不得在 `Player.gd` 裡處理死亡後的流程，死亡一律透過 `Events` 廣播（`kill()` 只宣告死亡，重生由 `RespawnHandler` 這類處理者呼叫 `revive()`）
 - ❌ 不要用 `reload_current_scene()` 或切換場景做重生／換關，一律在同一個場景內用 `Room` 與軟重生（見 `documents/00b_rooms_and_soft_respawn.md`）
   - 唯一例外（講師決定，U189）：標題畫面的「開始遊戲」、選單的「回標題」換場景，一律透過 `MenuAction` → `PauseMenu.change_scene()`，
-    它會在換之前把自動載入裡上一關的狀態歸零（`Stats`／`HudData`／`StatsHud` 的 `reset_for_new_scene()`、`RespawnMemory.clear()`）
+	它會在換之前把自動載入裡上一關的狀態歸零（`Stats`／`HudData`／`StatsHud` 的 `reset_for_new_scene()`、`RespawnMemory.clear()`）
 - ❌ 不要新增需要學員安裝的外掛或 addon
 - ❌ 不要用 Godot 3.x 的 API（`KinematicBody2D`、`move_and_slide(velocity, UP)` 舊簽章等）
 
@@ -219,9 +220,9 @@ godot --headless --path . res://_tests/SmokeTest.tscn
 - 小技巧：
   - 手動測試場景不會自己結束，headless 跑的時候加 `--quit-after <幀數>`；要自動結束的場景自己呼叫 `get_tree().quit()`。
   - 用 `-s` 跑臨時 `extends SceneTree` 腳本時，不能直接寫自動載入的名稱（`Stats`、`Events`…），要用 `root.get_node("Stats")`；
-    臨時腳本用完要刪掉（含 `.uid`）。
+	臨時腳本用完要刪掉（含 `.uid`）。
   - 幫**已存在**的腳本加 `class_name` 後，編輯器的全域類別快取可能沒更新（出現「Identifier not declared」），
-    跑 `godot --headless --editor --quit --path .` 重新掃描，並請使用者「專案 → 重新載入目前專案」。
+	跑 `godot --headless --editor --quit --path .` 重新掃描，並請使用者「專案 → 重新載入目前專案」。
 
 ---
 
