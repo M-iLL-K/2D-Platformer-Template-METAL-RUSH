@@ -1076,6 +1076,9 @@
 - [ ] U228 手機搖桿 `ui/TouchStick`：拖進關卡出現在角落，手指推多遠就走多快（類比），往上、下推也會按住上、下；
 	  `corner`／距離／大小／透明度跟 TouchButton 一樣；`dead_zone` 拉桿；可以拿來取代套件的左右鍵
 	  （驗證：`tests/ui/TouchStickTest.tscn`）
+- [x] U229 JuiceBase 加 `set_off(off)`：跟 `set_on` 相反，勾著就 `turn_off()`、取消勾就 `turn_on()`；勾選框的字寫「關掉畫面震動」、預設不勾時用這個
+	  （驗證：`tests/juice/JuiceSetOffTest.tscn`：跟 JuiceSetOnTest 一樣，勾選框改成「關掉畫面震動」、toggled 連到 set_off）
+　　→ 講師決定：學員問怎麼改成「勾選才關閉」；訊號連線視窗沒辦法把 true／false 反過來，所以多一個 set_off 跟 set_on 成對
 ## 之後再做（構想，還沒排進單元）
 
 - GameFlow 加上狀態：管理「開始 → 進行中 → 過關／Game Over」，學員可以聽狀態變化的訊號；

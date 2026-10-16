@@ -98,6 +98,10 @@ func set_on(on: bool, ..._args: Array) -> void:
 	else:
 		turn_off()
 
+# 跟 set_on 相反：勾選框的字寫「關掉…」時把 toggled 連到這裡，勾著就關、取消勾就開
+func set_off(off: bool, ..._args: Array) -> void:
+	set_on(not off)
+
 # Juice 組件在這裡做初始化，例如設定初始狀態
 func _on_setup() -> void:
 	pass
