@@ -26,6 +26,30 @@ extends Button
 # 選關卡時順便記下檔案的 UID：學員之後把關卡改名、搬資料夾，還找得到
 @export_storage var level_uid: String = ""
 
+@export_group("音效")
+## 按下這顆按鈕播什麼音效：「跟畫面一樣」用最上層 UIRoot 的按鈕音效；想跟別顆不一樣再選
+@export_enum("跟畫面一樣", "無", "嗶", "金幣", "撿東西", "跳躍", "落地", "雷射", "自訂") var press_sound: int = SOUND_FOLLOW:
+	set(value):
+		press_sound = value
+		notify_property_list_changed()
+		update_configuration_warnings()
+## 自己的按下音效：從檔案系統把 .wav／.ogg／.mp3 拖進來
+@export var custom_press_sound: AudioStream:
+	set(value):
+		custom_press_sound = value
+		update_configuration_warnings()
+## 選到這顆按鈕時（滑鼠移上去、用鍵盤或手把切換）播什麼音效：「跟畫面一樣」用最上層 UIRoot 的
+@export_enum("跟畫面一樣", "無", "嗶", "金幣", "撿東西", "跳躍", "落地", "雷射", "自訂") var select_sound: int = SOUND_FOLLOW:
+	set(value):
+		select_sound = value
+		notify_property_list_changed()
+		update_configuration_warnings()
+## 自己的選到音效：從檔案系統把 .wav／.ogg／.mp3 拖進來
+@export var custom_select_sound: AudioStream:
+	set(value):
+		custom_select_sound = value
+		update_configuration_warnings()
+
 const ACTION_RESUME := 0
 const ACTION_RESTART := 1
 const ACTION_QUIT := 2
@@ -36,6 +60,15 @@ const _NAMES := ["繼續遊戲", "整關重來", "離開遊戲", "開始遊戲",
 # 「開始遊戲」的下拉選單從這些資料夾找關卡
 const _LEVEL_DIRS := ["res://_my", "res://levels/_starts"]
 const _SCAN_GAP_MS := 2000
+
+# 音效下拉：0 是跟畫面一樣，其他的減 1 就是 UIRoot 按鈕音效的選項
+const SOUND_FOLLOW := 0
+const SOUND_CUSTOM := 8
+# 按鈕自己選的音效用這個音量
+const _SOUND_VOLUME := 0.8
+
+# 這個時間（毫秒）以前選到不播音效：選單剛出現時會自動選第一顆按鈕
+var _select_quiet_until := 0
 
 # 測試場景用：假裝在網頁版上，檢查「離開遊戲」會不會藏起來
 static var pretend_web: bool = false
@@ -50,6 +83,43 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	pressed.connect(_on_pressed)
 	refresh_menu_action()
+	for problem in _sound_problems():
+		push_warning("[%s] %s" % [name, problem])
+		printerr("⚠ [%s] %s" % [name, problem])
+	pressed.connect(_on_pressed_sound)
+	mouse_entered.connect(_on_selected_sound.bind(true))
+	focus_entered.connect(_on_selected_sound.bind(false))
+	visibility_changed.connect(_on_visibility_changed_for_sounds)
+	_select_quiet_until = Time.get_ticks_msec() + UIRoot.SELECT_QUIET_MS
+
+# 這顆按鈕有沒有自己選音效（press 為 true 問按下、false 問選到）；有的話 UIRoot 就不幫它播
+func has_own_sound(press: bool) -> bool:
+	return (press_sound if press else select_sound) != SOUND_FOLLOW
+
+# 按下時：自己選了音效就播自己的
+func _on_pressed_sound() -> void:
+	if press_sound != SOUND_FOLLOW:
+		UIRoot.play_ui_sound(self, UIRoot.ui_sound(press_sound - 1, custom_press_sound), _SOUND_VOLUME)
+
+# 選到時：自己選了音效就播自己的（點下去順便選到、選單剛出現自動選的不播）
+func _on_selected_sound(by_mouse: bool) -> void:
+	if select_sound == SOUND_FOLLOW or not UIRoot.is_select_sound_wanted(self, by_mouse, _select_quiet_until):
+		return
+	UIRoot.play_ui_sound(self, UIRoot.ui_sound(select_sound - 1, custom_select_sound), _SOUND_VOLUME)
+
+# 選單出現時會自動選第一顆按鈕，這一下不播選到的音效
+func _on_visibility_changed_for_sounds() -> void:
+	if is_visible_in_tree():
+		_select_quiet_until = Time.get_ticks_msec() + UIRoot.SELECT_QUIET_MS
+
+# 音效的設定問題：選了「自訂」卻沒放音檔
+func _sound_problems() -> PackedStringArray:
+	var problems := PackedStringArray()
+	if press_sound == SOUND_CUSTOM and custom_press_sound == null:
+		problems.append("press_sound 選了「自訂」，但 custom_press_sound 是空的，請把音檔從檔案系統拖進來；沒放之前先播嗶")
+	if select_sound == SOUND_CUSTOM and custom_select_sound == null:
+		problems.append("select_sound 選了「自訂」，但 custom_select_sound 是空的，請把音檔從檔案系統拖進來；沒放之前先播嗶")
+	return problems
 
 # 依現在的狀況決定要不要出現：沒有 RespawnHandler 藏起「整關重來」，網頁版藏起「離開遊戲」，
 # 沒有標題畫面可回藏起「回標題」。暫停選單打開時會呼叫
@@ -100,8 +170,13 @@ func get_level_path() -> String:
 			return ResourceUID.get_id_path(id)
 	return ""
 
-# 「開始遊戲」的 level 欄位：只在這個動作下顯示，選項是掃到的關卡（存的是去掉 res:// 的路徑）
+# 「開始遊戲」的 level 欄位：只在這個動作下顯示，選項是掃到的關卡（存的是去掉 res:// 的路徑）；
+# 自訂音效的欄位只在選「自訂」時顯示
 func _validate_property(property: Dictionary) -> void:
+	if property.name == "custom_press_sound" and press_sound != SOUND_CUSTOM:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+	elif property.name == "custom_select_sound" and select_sound != SOUND_CUSTOM:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
 	if property.name != "level":
 		return
 	if action != ACTION_START:
@@ -119,6 +194,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	var problem := _level_problem()
 	if problem != "":
 		warnings.append(problem)
+	warnings.append_array(_sound_problems())
 	return warnings
 
 # 放進關卡的選單（看不到裡面的按鈕）時，警告由 UIRoot 收集起來顯示在最上層

@@ -109,6 +109,8 @@ Claude Code 在這個專案裡的所有對話回覆、進度回報、驗收結�
 預設值就能用，字跟底框亮度太接近時黃色驚嘆號＋執行時中文警告。
 `UIRoot.key_art`（`Texture2D`，標題畫面的主視覺）同屬資源欄位例外：空白就用範本裡原本的圖，不警告（見 `documents/progress.md` U189）。
 `UIRoot.music`（`AudioStream`，標題畫面的背景音樂）同屬資源欄位例外：空白就不播，不警告（見 `documents/progress.md` U223）。
+`UIRoot.custom_press_sound`／`custom_select_sound`、`MenuAction.custom_press_sound`／`custom_select_sound`（`AudioStream`，按鈕按下、選到的音效）同屬資源欄位例外：
+只在下拉選「自訂」時出現；空白時黃色驚嘆號＋執行時中文警告，改播嗶照常運作（見 `documents/progress.md` U224）。
 `Ability_Ranged.bullet_texture`／`EnemyShooter.bullet_texture`／`Ability_Melee.slash_texture`（`Texture2D`）同屬資源欄位例外：學員把子彈、揮擊的圖拖進來；
 空白就照舊顯示色塊，不警告（見 `documents/04_skin_and_ui.md` §6.3）。
 
