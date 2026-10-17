@@ -25,6 +25,10 @@ tile_map_data = PackedByteArray("AADx//7/AAADAAEAAADy//7/AAADAAEAAADz//7/AAADAAE
 [node name="Room" parent="." instance=ExtResource("5")]
 position = Vector2(-240, -80)
 
+[node name="BoxFixed" parent="Room" instance=ExtResource("8")]
+position = Vector2(110, 248)
+can_push = false
+
 [node name="BoxLight" parent="Room" instance=ExtResource("8")]
 position = Vector2(200, 248)
 

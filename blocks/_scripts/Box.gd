@@ -4,7 +4,10 @@ extends RigidBody2D
 # 被攻擊時只會被擊退，不會受傷、沒有耐久。
 # 拖進場景就能用，不用連任何線。
 
-## 重量：輕的比較好推、重的比較不好推
+## 推得動：取消勾的話變成固定在原地的實心方塊，站得上去、推不動（攻擊、推力器、彈射台、磁鐵也推不動），但還是算箱子（可以踩按鈕）
+@export var can_push: bool = true
+
+## 重量：輕的比較好推、重的比較不好推（推不動的箱子用不到）
 @export_enum("輕", "重") var weight: int = 0
 
 ## 會不會擋子彈：關掉的話子彈（玩家的、敵人的都一樣）會直接穿過去
@@ -27,6 +30,9 @@ func _ready() -> void:
 	lock_rotation = true
 	collision_layer = Layers.BOX
 	collision_mask = Layers.PLAYER | Layers.TERRAIN | Layers.BOX
+	if not can_push:
+		freeze_mode = RigidBody2D.FREEZE_MODE_STATIC
+		freeze = true
 	_start_position = global_position
 
 # 把自己恢復到關卡開始時的狀態：回到原位、停止移動（重生處理者呼叫）
@@ -38,6 +44,8 @@ func reset() -> void:
 
 # 被玩家推：往 dir（-1 左、1 右）的方向動，speed 是玩家這一幀要走的速度，輕的跟得上、重的比較慢
 func push(dir: int, speed: float) -> void:
+	if not can_push:
+		return
 	sleeping = false
 	linear_velocity.x = dir * speed * (_LIGHT_PUSH if weight == 0 else _HEAVY_PUSH)
 
