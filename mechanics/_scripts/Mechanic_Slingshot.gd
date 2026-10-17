@@ -35,8 +35,17 @@ extends MechanicBase
 		notify_property_list_changed()
 
 @export_group("中心點外觀")
-## 中心點、範圍圈要畫成什麼樣子
-@export_enum("實線圈", "虛線圈", "沒有圈（只有中心點和拉線）", "只有中心點") var center_style: int = 0
+## 要畫出哪些東西
+@export_enum("中心點＋範圍圈＋拉線", "中心點＋拉線（沒有圈）", "只有中心點") var center_style: int = 0
+## 風格：圈、中心點、拉線的形狀（簡單＝細實線圓點、虛線＝虛線圈，其他跟 UI 的風格同名：像素復古＝方格鋸齒圈方點、
+## 乾淨極簡＝細線空心點、可愛圓角＝粗圓圈加影子、木牌＝雙層木框加釘子、科幻＝發光雙圈加刻度菱形點、
+## 漫畫＝粗黑框加硬陰影、復古遊戲機＝雙線圈方框點）
+@export_enum("簡單", "虛線", "像素復古", "乾淨極簡", "可愛圓角", "木牌", "科幻", "漫畫", "復古遊戲機") var look: int = 0
+## 配色：中心點、圈、拉線的顏色一起換，跟 UI 的配色同名；選「自訂」才會出現下面三個取色器
+@export_enum("預設", "暗色", "亮色", "復古綠", "糖果", "海洋", "森林", "夕陽", "黑白", "萬聖節", "自訂") var palette: int = 0:
+	set(value):
+		palette = value
+		notify_property_list_changed()
 ## 開啟時範圍圈就是最遠能拉到的地方（跟著 max_drag_distance 變）；關掉就用下面的 range_size 自己決定圈多大
 @export var range_follow_drag: bool = true:
 	set(value):
@@ -48,13 +57,13 @@ extends MechanicBase
 @export_range(1.0, 10.0) var line_width: float = 2.0
 ## 中心點的大小（有放圖片時就是圖片的大小）
 @export_range(2.0, 40.0) var center_size: float = 5.0
-## 中心點的顏色（點色塊選顏色，可以調透明度）
+## 中心點的顏色（palette 選自訂才會顯示；點色塊選顏色，可以調透明度）
 @export var center_color: Color = Color(1.0, 0.85, 0.3, 0.9)
-## 範圍圈的顏色
+## 範圍圈的顏色（palette 選自訂才會顯示）
 @export var range_color: Color = Color(1.0, 1.0, 1.0, 0.35)
-## 從中心點拉到滑鼠那條線的顏色
+## 從中心點拉到滑鼠那條線的顏色（palette 選自訂才會顯示）
 @export var band_color: Color = Color(1.0, 0.85, 0.3, 0.9)
-## 中心點換成自己的圖：把圖片從檔案系統拖進來；空白就畫圓點
+## 中心點換成自己的圖：把圖片從檔案系統拖進來；空白就照風格畫
 @export var center_texture: Texture2D
 @export_group("")
 
@@ -73,14 +82,32 @@ var _aim_line: Line2D
 var _center_mark: Node2D
 
 # center_style 的選項
-const _STYLE_DASHED := 1
-const _STYLE_NO_RING := 2
-const _STYLE_DOT_ONLY := 3
+const _STYLE_NO_RING := 1
+const _STYLE_DOT_ONLY := 2
+# look 的選項
+const _LOOK_SIMPLE := 0
+const _LOOK_DASHED := 1
+const _LOOK_PIXEL := 2
+const _LOOK_CLEAN := 3
+const _LOOK_CUTE := 4
+const _LOOK_WOOD := 5
+const _LOOK_SCIFI := 6
+const _LOOK_COMIC := 7
+const _LOOK_RETRO := 8
+# palette 的「自訂」選項
+const _PALETTE_CUSTOM := 10
+# 「預設」配色的顏色
+const _DEFAULT_CENTER := Color(1.0, 0.85, 0.3, 0.9)
+const _DEFAULT_RANGE := Color(1.0, 1.0, 1.0, 0.35)
+# 漫畫風的黑框、陰影
+const _INK := Color(0.0, 0.0, 0.0, 0.85)
 # 範圍圈切成幾段（虛線圈就是隔一段畫一段）
 const _RANGE_POINTS := 48
 # 「中心點外觀」群組裡的欄位，show_drag_center 關掉時一起藏起來
-const _LOOK_FIELDS := ["center_style", "range_follow_drag", "range_size", "line_width", "center_size",
+const _LOOK_FIELDS := ["center_style", "look", "palette", "range_follow_drag", "range_size", "line_width", "center_size",
 		"center_color", "range_color", "band_color", "center_texture"]
+# 配色選「自訂」才出現的取色器
+const _CUSTOM_COLOR_FIELDS := ["center_color", "range_color", "band_color"]
 
 # input_type 的「Input Map 動作」選項
 const _INPUT_MAP_ACTION := 4
@@ -91,7 +118,7 @@ func _ready() -> void:
 		return
 	super._ready()
 
-# 選滑鼠按鍵時隱藏 key 欄位；沒開中心點時藏起外觀欄位；範圍圈跟著拉的距離時藏起 range_size
+# 選滑鼠按鍵時隱藏 key 欄位；沒開中心點時藏起外觀欄位；範圍圈跟著拉的距離時藏起 range_size；配色不是自訂時藏起取色器
 func _validate_property(property: Dictionary) -> void:
 	if property.name == "key" and input_type != 0:
 		property.usage = PROPERTY_USAGE_NONE
@@ -100,6 +127,8 @@ func _validate_property(property: Dictionary) -> void:
 	elif property.name in _LOOK_FIELDS and not show_drag_center:
 		property.usage = PROPERTY_USAGE_NONE
 	elif property.name == "range_size" and range_follow_drag:
+		property.usage = PROPERTY_USAGE_NONE
+	elif property.name in _CUSTOM_COLOR_FIELDS and palette != _PALETTE_CUSTOM:
 		property.usage = PROPERTY_USAGE_NONE
 
 # 向 InputRouter 註冊拖曳鍵的按下／放開；show_aim_line 開啟時自己生成一條瞄準線，學員不用擺
@@ -149,7 +178,8 @@ func apply(ctx: MoveContext) -> void:
 		_aim_line.points = PackedVector2Array([Vector2.ZERO, -drag])
 	if _dragging and _center_mark:
 		var pull: Vector2 = (player.get_global_mouse_position() - _drag_start).limit_length(max_drag_distance)
-		(_center_mark.get_node("Band") as Line2D).points = PackedVector2Array([Vector2.ZERO, pull])
+		for line in _center_mark.get_node("Band").get_children():
+			(line as Line2D).points = PackedVector2Array([Vector2.ZERO, pull])
 		_center_mark.visible = true
 
 # 重生時取消拖曳中的狀態、藏起瞄準線
@@ -185,60 +215,184 @@ func _make_center_mark() -> void:
 	_center_mark.top_level = true
 	_center_mark.visible = false
 	add_child(_center_mark)
-	var ring := Node2D.new()
-	ring.name = "Ring"
-	_center_mark.add_child(ring)
-	var band := Line2D.new()
-	band.name = "Band"
-	_center_mark.add_child(band)
-	var dot := Polygon2D.new()
-	dot.name = "Dot"
-	_center_mark.add_child(dot)
+	for part in ["Ring", "Band", "Dot"]:
+		var holder := Node2D.new()
+		holder.name = part
+		_center_mark.add_child(holder)
 	var picture := Sprite2D.new()
 	picture.name = "Picture"
 	_center_mark.add_child(picture)
 
 # 照外觀欄位重畫中心點、範圍圈、拉線（遊戲中改了欄位，下次開始拉就會套用）
 func _refresh_center_mark() -> void:
-	var ring: Node2D = _center_mark.get_node("Ring")
-	for child in ring.get_children():
-		child.free()
+	for part in ["Ring", "Band", "Dot"]:
+		for child in _center_mark.get_node(part).get_children():
+			child.free()
+	var colors := _look_colors()
 	if center_style != _STYLE_NO_RING and center_style != _STYLE_DOT_ONLY:
-		var radius := max_drag_distance if range_follow_drag else range_size
-		var points := _circle_points(radius, _RANGE_POINTS)
-		if center_style == _STYLE_DASHED:
-			for i in range(0, _RANGE_POINTS, 2):
-				_add_ring_line(ring, PackedVector2Array([points[i], points[i + 1]]), false)
-		else:
-			_add_ring_line(ring, points, true)
-	var band: Line2D = _center_mark.get_node("Band")
-	band.width = line_width
-	band.default_color = band_color
-	band.visible = center_style != _STYLE_DOT_ONLY
-	var dot: Polygon2D = _center_mark.get_node("Dot")
+		_draw_ring(_center_mark.get_node("Ring"), max_drag_distance if range_follow_drag else range_size, colors)
+	if center_style != _STYLE_DOT_ONLY:
+		_draw_band(_center_mark.get_node("Band"), colors)
 	var picture: Sprite2D = _center_mark.get_node("Picture")
-	dot.visible = center_texture == null
 	picture.visible = center_texture != null
 	if center_texture == null:
-		dot.color = center_color
-		dot.polygon = _circle_points(center_size, 16)
+		_draw_dot(_center_mark.get_node("Dot"), colors)
 	else:
 		picture.texture = center_texture
 		var longest := maxf(center_texture.get_width(), center_texture.get_height())
 		picture.scale = Vector2.ONE * (center_size * 2.0 / maxf(longest, 1.0))
-		picture.modulate = Color.WHITE
 
-# 在範圍圈底下加一段線
-func _add_ring_line(ring: Node2D, points: PackedVector2Array, closed: bool) -> void:
+# 現在用的顏色：center 中心點、range 圈、band 拉線、dark 影子和釘子；跟 UI 同名的配色用 UIRoot 的那一套（亮色當中心點和拉線、字的顏色當圈）
+func _look_colors() -> Dictionary:
+	if palette == _PALETTE_CUSTOM:
+		return {"center": center_color, "range": range_color, "band": band_color, "dark": Color(0.0, 0.0, 0.0, 0.5)}
+	if palette <= 0 or palette >= UIRoot._PALETTES.size():
+		return {"center": _DEFAULT_CENTER, "range": _DEFAULT_RANGE, "band": _DEFAULT_CENTER, "dark": Color(0.0, 0.0, 0.0, 0.5)}
+	var set_colors: Dictionary = UIRoot._PALETTES[palette]
+	return {"center": set_colors.accent, "range": Color(set_colors.text, 0.5), "band": set_colors.accent,
+		"dark": Color(set_colors.back, 0.7)}
+
+# 照風格畫範圍圈
+func _draw_ring(ring: Node2D, radius: float, colors: Dictionary) -> void:
+	var color: Color = colors.range
+	var w := line_width
+	var circle := _circle_points(radius, _RANGE_POINTS)
+	match look:
+		_LOOK_DASHED:
+			for i in range(0, _RANGE_POINTS, 2):
+				_add_line(ring, PackedVector2Array([circle[i], circle[i + 1]]), w, color)
+		_LOOK_PIXEL:
+			var line := _add_line(ring, _pixel_circle(radius, maxf(w * 2.0, 4.0)), w, color, true)
+			line.joint_mode = Line2D.LINE_JOINT_SHARP
+			line.antialiased = false
+		_LOOK_CLEAN:
+			_add_line(ring, circle, maxf(w * 0.5, 1.0), color, true)
+		_LOOK_CUTE:
+			_add_line(ring, circle, w * 2.0, Color(colors.dark, 0.35), true, Vector2(0.0, w + 1.0))
+			var line := _add_line(ring, circle, w * 2.0, color, true)
+			line.joint_mode = Line2D.LINE_JOINT_ROUND
+		_LOOK_WOOD:
+			_add_line(ring, circle, w * 3.0, Color(color.darkened(0.45), maxf(color.a, 0.6)), true)
+			_add_line(ring, circle, w, color.lightened(0.2), true)
+			for angle in [0.0, PI * 0.5, PI, PI * 1.5]:
+				_add_poly(ring, _circle_points(maxf(w, 2.0), 8), colors.dark, Vector2.RIGHT.rotated(angle) * radius)
+		_LOOK_SCIFI:
+			_add_line(ring, circle, w * 4.0, Color(color, color.a * 0.3), true)
+			_add_line(ring, circle, maxf(w * 0.75, 1.0), color, true)
+			var inner := _circle_points(radius * 0.85, _RANGE_POINTS * 2)
+			for i in range(0, _RANGE_POINTS * 2, 4):
+				_add_line(ring, PackedVector2Array([inner[i], inner[i + 1]]), maxf(w * 0.5, 1.0), color)
+			for i in 8:
+				var dir := Vector2.RIGHT.rotated(TAU * i / 8.0)
+				_add_line(ring, PackedVector2Array([dir * radius, dir * (radius + w * 4.0 + 4.0)]), maxf(w * 0.75, 1.0), color)
+		_LOOK_COMIC:
+			_add_line(ring, circle, w + 4.0, _INK, true, Vector2(4.0, 4.0))
+			_add_line(ring, circle, w + 4.0, Color(0.0, 0.0, 0.0, 1.0), true)
+			_add_line(ring, circle, w, Color(color, 1.0), true)
+		_LOOK_RETRO:
+			var thin := maxf(w * 0.75, 1.0)
+			_add_line(ring, circle, thin, color, true)
+			_add_line(ring, _circle_points(maxf(radius - maxf(w * 2.5, 4.0), 4.0), _RANGE_POINTS), thin, color, true)
+		_:
+			_add_line(ring, circle, w, color, true)
+
+# 照風格準備拉線（點會在拖曳時每幀更新）
+func _draw_band(band: Node2D, colors: Dictionary) -> void:
+	var color: Color = colors.band
+	var w := line_width
+	match look:
+		_LOOK_CLEAN:
+			_add_line(band, PackedVector2Array(), maxf(w * 0.5, 1.0), color)
+		_LOOK_CUTE:
+			var line := _add_line(band, PackedVector2Array(), w * 1.5, color)
+			line.begin_cap_mode = Line2D.LINE_CAP_ROUND
+			line.end_cap_mode = Line2D.LINE_CAP_ROUND
+		_LOOK_SCIFI:
+			_add_line(band, PackedVector2Array(), w * 4.0, Color(color, color.a * 0.3))
+			_add_line(band, PackedVector2Array(), maxf(w * 0.75, 1.0), color)
+		_LOOK_COMIC:
+			_add_line(band, PackedVector2Array(), w + 4.0, Color(0.0, 0.0, 0.0, 1.0))
+			_add_line(band, PackedVector2Array(), w, Color(color, 1.0))
+		_LOOK_PIXEL:
+			var line := _add_line(band, PackedVector2Array(), w, color)
+			line.antialiased = false
+		_:
+			_add_line(band, PackedVector2Array(), w, color)
+
+# 照風格畫中心點
+func _draw_dot(dot: Node2D, colors: Dictionary) -> void:
+	var color: Color = colors.center
+	var size := center_size
+	match look:
+		_LOOK_PIXEL:
+			_add_poly(dot, _square_points(size), color)
+		_LOOK_CLEAN:
+			_add_line(dot, _circle_points(size, 20), maxf(line_width * 0.5, 1.0), color, true)
+			_add_poly(dot, _circle_points(maxf(size * 0.3, 1.0), 8), color)
+		_LOOK_CUTE:
+			_add_poly(dot, _circle_points(size, 20), Color(colors.dark, 0.35), Vector2(0.0, line_width + 1.0))
+			_add_poly(dot, _circle_points(size, 20), color)
+			_add_poly(dot, _circle_points(size * 0.35, 10), Color(1.0, 1.0, 1.0, 0.7), Vector2(-size, -size) * 0.3)
+		_LOOK_WOOD:
+			_add_poly(dot, _circle_points(size + 2.0, 16), Color(color.darkened(0.45), maxf(color.a, 0.6)))
+			_add_poly(dot, _circle_points(size, 16), color)
+		_LOOK_SCIFI:
+			var big := size * 1.3
+			_add_poly(dot, PackedVector2Array([Vector2(0, -big), Vector2(big, 0), Vector2(0, big), Vector2(-big, 0)]), color)
+		_LOOK_COMIC:
+			_add_poly(dot, _circle_points(size + 2.0, 16), _INK, Vector2(3.0, 3.0))
+			_add_poly(dot, _circle_points(size + 2.0, 16), Color(0.0, 0.0, 0.0, 1.0))
+			_add_poly(dot, _circle_points(size, 16), Color(color, 1.0))
+		_LOOK_RETRO:
+			_add_poly(dot, _square_points(size + 2.0), colors.dark)
+			_add_poly(dot, _square_points(size), color)
+		_:
+			_add_poly(dot, _circle_points(size, 16), color)
+
+# 加一條線
+func _add_line(parent: Node2D, points: PackedVector2Array, width: float, color: Color, closed: bool = false, offset: Vector2 = Vector2.ZERO) -> Line2D:
 	var line := Line2D.new()
-	line.width = line_width
-	line.default_color = range_color
+	line.width = width
+	line.default_color = color
 	line.closed = closed
 	line.points = points
-	ring.add_child(line)
+	line.position = offset
+	parent.add_child(line)
+	return line
 
-# 顏色的透明度拉到 0 會完全看不到，提醒學員（不然會以為壞掉）
+# 加一塊填滿的形狀
+func _add_poly(parent: Node2D, points: PackedVector2Array, color: Color, offset: Vector2 = Vector2.ZERO) -> Polygon2D:
+	var poly := Polygon2D.new()
+	poly.polygon = points
+	poly.color = color
+	poly.position = offset
+	parent.add_child(poly)
+	return poly
+
+# 正方形的四個角（size 是中心到邊的距離）
+func _square_points(size: float) -> PackedVector2Array:
+	return PackedVector2Array([Vector2(-size, -size), Vector2(size, -size), Vector2(size, size), Vector2(-size, size)])
+
+# 像素風的圓：圓周上的點對齊格子，相鄰兩點之間補一個轉角，變成方格鋸齒
+func _pixel_circle(radius: float, grid: float) -> PackedVector2Array:
+	var snapped_points := PackedVector2Array()
+	for point in _circle_points(radius, _RANGE_POINTS):
+		var snapped_point := point.snapped(Vector2(grid, grid))
+		if snapped_points.is_empty() or snapped_points[snapped_points.size() - 1] != snapped_point:
+			snapped_points.append(snapped_point)
+	var stairs := PackedVector2Array()
+	for i in snapped_points.size():
+		var a := snapped_points[i]
+		var b := snapped_points[(i + 1) % snapped_points.size()]
+		stairs.append(a)
+		if a.x != b.x and a.y != b.y:
+			stairs.append(Vector2(b.x, a.y))
+	return stairs
+
+# 自訂配色的顏色透明度拉到 0 會完全看不到，提醒學員（不然會以為壞掉）
 func _warn_invisible_colors() -> void:
+	if palette != _PALETTE_CUSTOM:
+		return
 	var names := {"center_color": "中心點", "range_color": "範圍圈", "band_color": "拉線"}
 	for field in names:
 		if (get(field) as Color).a <= 0.01:
