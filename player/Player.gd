@@ -70,6 +70,8 @@ var _early_jump_left: float = 0.0   # 空中按的跳躍還要記幾秒（預輸
 var _short_jump_armed: bool = false # 這一跳是按著跳躍鍵跳的，提早放開要砍掉往上的速度
 var _replaying_jump: bool = false   # 正在重播預輸入的跳躍鍵（這時跳起來也算「按著跳躍鍵跳的」）
 var _invincible_sources: Dictionary = {}  # 開無敵的組件(Node) -> 是不是連死都不會死（bool）
+var _free_move_sources: Dictionary = {}   # 開自由移動的組件(Node) -> [要不要穿牆(bool), 飛多快(float)]
+var _saved_collision_mask: int = -1       # 穿牆前原本的碰撞遮罩，-1 代表現在沒在穿牆
 
 const _JuiceLayer := preload("res://player/JuiceLayer.gd")
 
@@ -96,7 +98,7 @@ func _ready() -> void:
 
 # 預設跳躍：地面上按下跳躍鍵就跳，除非被更高優先權的機制卡攔截掉（例如蓄力青蛙跳）
 func _on_jump_pressed() -> bool:
-	if _is_dead or _cached_input_locked:
+	if _is_dead or _cached_input_locked or is_free_moving():
 		return false
 	if not can_ground_jump():
 		# 跳不起來：記下來，在 early_jump_time 秒內落地就自動跳（預輸入）
@@ -160,6 +162,9 @@ func _try_setup(child: Node, track_apply: bool) -> void:
 func _physics_process(delta: float) -> void:
 	if _is_dead:
 		return
+	if is_free_moving():
+		_free_move()
+		return
 
 	var ctx := MoveContext.new()
 	ctx.delta = delta
@@ -189,6 +194,23 @@ func _physics_process(delta: float) -> void:
 	_emit_wall_hit()
 	_emit_ceiling_hit()
 	_update_jump_assist(delta)
+
+# 自由移動：不受重力、不跑機制卡，上下左右鍵往哪按就往哪飛；freeze() 中一樣不能動
+func _free_move() -> void:
+	var dir := Vector2.ZERO
+	if not _frozen:
+		dir = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var speed := 0.0
+	for setting in _free_move_sources.values():
+		speed = maxf(speed, setting[1])
+	velocity = dir * speed
+	if dir.x != 0.0:
+		_update_facing(dir.x)
+	_late_jump_left = 0.0
+	_early_jump_left = 0.0
+	_short_jump_armed = false
+	_impulse_grace_left = 0.0
+	move_and_slide()
 
 # 按鍵手感：站在地上時補滿土狼時間、離開地面後倒數；空中按過跳躍、在時間內落地就重播一次跳躍鍵
 func _update_jump_assist(delta: float) -> void:
@@ -403,6 +425,37 @@ func set_invincible(source: Node, on: bool, no_death: bool = false) -> void:
 func is_invincible() -> bool:
 	_drop_freed_sources(_invincible_sources)
 	return not _invincible_sources.is_empty()
+
+# 開關自由移動，作弊這類組件用這個：開著時不受重力、機制卡暫停，用上下左右鍵自由飛（speed 是每秒幾像素）；
+# pass_walls 勾著的話穿過地形，房間切換、撿東西、碰觸發區照常。好幾個組件同時開時，全部關掉才恢復
+func set_free_move(source: Node, on: bool, pass_walls: bool = false, speed: float = 250.0) -> void:
+	if on:
+		_free_move_sources[source] = [pass_walls, speed]
+	else:
+		_free_move_sources.erase(source)
+	_update_pass_walls()
+
+# 回傳玩家現在是不是在自由移動（飛行）
+func is_free_moving() -> bool:
+	if _free_move_sources.is_empty():
+		return false
+	var before := _free_move_sources.size()
+	_drop_freed_sources(_free_move_sources)
+	if _free_move_sources.size() != before:
+		_update_pass_walls()
+	return not _free_move_sources.is_empty()
+
+# 有人要穿牆就把碰撞遮罩清空（先記住原本的），沒人要了就還原
+func _update_pass_walls() -> void:
+	var want := false
+	for setting in _free_move_sources.values():
+		want = want or setting[0]
+	if want and _saved_collision_mask < 0:
+		_saved_collision_mask = collision_mask
+		collision_mask = 0
+	elif not want and _saved_collision_mask >= 0:
+		collision_mask = _saved_collision_mask
+		_saved_collision_mask = -1
 
 # 有沒有人開了「連死都不會死」
 func _has_no_death() -> bool:
