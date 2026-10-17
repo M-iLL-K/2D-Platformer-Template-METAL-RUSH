@@ -69,6 +69,7 @@ var _late_jump_left: float = 0.0    # 離開地面後還剩幾秒可以跳（土
 var _early_jump_left: float = 0.0   # 空中按的跳躍還要記幾秒（預輸入）
 var _short_jump_armed: bool = false # 這一跳是按著跳躍鍵跳的，提早放開要砍掉往上的速度
 var _replaying_jump: bool = false   # 正在重播預輸入的跳躍鍵（這時跳起來也算「按著跳躍鍵跳的」）
+var _invincible_sources: Dictionary = {}  # 開無敵的組件(Node) -> 是不是連死都不會死（bool）
 
 const _JuiceLayer := preload("res://player/JuiceLayer.gd")
 
@@ -342,7 +343,7 @@ func set_size_factor(f: float) -> void:
 
 # 讓角色受到傷害，內部委派給 Stats 扣血量；血量歸零時 Stats 會自動呼叫 kill()
 func take_damage(amount: float = 1.0) -> void:
-	if _is_dead:
+	if _is_dead or is_invincible():
 		return
 	Stats.add(Stats.HEALTH_KIND, -roundi(amount * _damage_scale))
 	hurt.emit()
@@ -352,7 +353,7 @@ func take_damage(amount: float = 1.0) -> void:
 # 再加上擊退（會乘上機制卡調的擊退倍率）；
 # 跟敵人、可破壞方塊用同一個受擊介面，攻擊方不用分辨打到的是誰
 func take_hit(damage: int, knockback: Vector2, source: Node) -> void:
-	if _is_dead:
+	if _is_dead or is_invincible():
 		return
 	Events.hit.emit(self, source)
 	take_damage(damage)
@@ -361,7 +362,7 @@ func take_hit(damage: int, knockback: Vector2, source: Node) -> void:
 
 # 宣告玩家死亡，實際要發生什麼事（重生、結算畫面…）由聽到 player_died 訊號的人決定
 func kill() -> void:
-	if _is_dead:
+	if _is_dead or _has_no_death():
 		return
 	_is_dead = true
 	velocity = Vector2.ZERO
@@ -389,6 +390,30 @@ func revive(at_position: Vector2) -> void:
 		if is_instance_valid(m) and m.has_method("on_respawn"):
 			m.on_respawn()
 	Events.player_respawned.emit(self)
+
+# 開關無敵，作弊這類組件用這個：開著時不扣血、不被擊退；no_death 勾著的話連掉進岩漿、被秒殺都什麼事都不會發生。
+# 用 source 記是誰開的，好幾個組件同時開時，全部關掉才失效
+func set_invincible(source: Node, on: bool, no_death: bool = false) -> void:
+	if on:
+		_invincible_sources[source] = no_death
+	else:
+		_invincible_sources.erase(source)
+
+# 回傳玩家現在是不是無敵（受傷、被打都沒事）
+func is_invincible() -> bool:
+	_drop_freed_sources(_invincible_sources)
+	return not _invincible_sources.is_empty()
+
+# 有沒有人開了「連死都不會死」
+func _has_no_death() -> bool:
+	_drop_freed_sources(_invincible_sources)
+	return _invincible_sources.values().has(true)
+
+# 把已經被刪掉的組件從開關名單拿掉，拔掉組件時效果跟著消失
+func _drop_freed_sources(sources: Dictionary) -> void:
+	for source in sources.keys():
+		if not is_instance_valid(source):
+			sources.erase(source)
 
 # 回傳玩家現在是不是死亡狀態（死掉之後、還沒被復活之前）
 func is_dead() -> bool:

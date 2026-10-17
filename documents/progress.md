@@ -1096,6 +1096,52 @@
 　　　勾選框、下拉選單是開場建的（不存進場景），畫面的按鈕音效、鍵盤選取照樣套得上；學員自己的訊號接口跟 Juice 一樣用 set_on／set_off 命名。
 　　　順手修：連線驗證器比對場景檔的連線時，目標在開場會自己移進 CanvasLayer 的畫面裡（例如暫停選單直接放進關卡）會被誤報「目標節點不存在」，現在會多找一層「名字Layer」
 　　→ 講師決定：做成零件讓玩家在選單裡切換；樣式給學員選；要有接口讓學員自己的按鈕也能接
+
+---
+
+# 額外功能：作弊模式
+
+> 講師決定：學員想做作弊模式。主要給玩家玩（秘技彩蛋），也給學員自己測關卡用（開發熱鍵）；
+> 兩邊共用同一套 Player 公開 API，只差在怎麼打開。不屬於任何一週，放在「額外功能」。
+> 一個 `Cheat` 組件用勾選框多選要開哪些功能，分「開關類」（再觸發一次就關掉）與「一次性」（每觸發一次做一次）；
+> 解鎖方式用下拉選單分類：按鍵指令／選單勾選框／只當接口，每一種都有訊號可以串接。
+> 按鍵指令開放打字（例如 `wwssasas`），只限英文字母與數字，打什麼就是按鍵盤上的哪個鍵（大小寫不分、全形轉半形）。
+> 開發熱鍵做成獨立的 `DevCheats` 組件，拖進來就把所有功能綁在 F 鍵上，不用設定。
+> 組件放新的 `cheats/`（`.gd` 放 `cheats/_scripts/`），測試場景放 `tests/cheats/`。
+
+## 階段 57：作弊模式
+
+- [ ] U232 Player 加無敵 API：`set_invincible(source, on)`／`is_invincible()`，跟 juice 一樣用 source 記是誰開的，全部關掉才失效；
+	  無敵時 `take_damage`／`take_hit` 不扣血、不擊退；確認跟脫殼卡 `PinballBody` 自己的無敵計時不會互相蓋掉
+	  （驗證：`tests/cheats/InvincibleTest.tscn`）
+　　→ 講師決定：要有「連掉坑、岩漿都不會死」，做法是 `kill()` 直接什麼事都不發生（不死、不傳送、不發訊號），不動 RespawnHandler。
+　　　已知限制：掉進無底洞會一直往下掉，要靠飛行飛回來
+- [ ] U233 Player 加自由移動 API：`set_free_move(source, on, pass_walls)`，開著時不受重力，用上下左右動作（WASD／方向鍵／手把／手機搖桿）自由飛，
+	  `pass_walls` 勾著就不撞地形；飛行時機制卡的移動修改（重力翻轉、無摩擦…）暫停，關掉後恢復；穿牆時房間切換、撿東西、碰觸發區照常運作
+	  （驗證：`tests/cheats/FreeMoveTest.tscn`）
+- [ ] U234 `cheats/Cheat`：先做開關類的無敵、飛行、穿牆三個勾選框，解鎖方式先做「只當接口」；
+	  接口 `turn_on()`／`turn_off()`／`toggle()`／`set_on(on)`／`set_off(off)`，訊號 `turned_on`／`turned_off`；
+	  `show_label` 勾選框：開著時畫面角落顯示「作弊中」；拔掉 Cheat 時會把自己開的效果全部關掉
+	  （驗證：`tests/cheats/CheatTest.tscn`）
+- [ ] U235 解鎖方式「按鍵指令」：`code` 打字欄（例如 `wwssasas`），`delay` 拉桿決定兩個鍵最多隔幾秒，超過就重來；輸入完成時觸發，並發出 `code_entered` 訊號
+	  （學員可以接 Juice 做音效、跳字）；打字欄四點防呆：空白時用預設指令、編輯器黃色驚嘆號（空白、有字母數字以外的字、太短、
+	  跟另一個 Cheat 的指令一樣或是它的開頭）、執行時中文警告、去空白＋全形轉半形＋轉小寫；CLAUDE.md 的打字欄位清單補上 `Cheat.code`
+	  （驗證：`tests/cheats/CheatCodeTest.tscn`）
+- [ ] U236 解鎖方式「選單勾選框」：Cheat 拖進暫停選單就出現一個勾選框，做法跟 `TouchSwitch` 一樣（開場建的、套得上按鈕音效與鍵盤選取）；
+	  勾選框的字預設用開了哪些功能組成，`label` 打字欄可以自己取（空白就用預設）
+	  （驗證：`tests/cheats/CheatMenuTest.tscn`）
+　　→ 講師決定：`Cheat.label` 開放打字，屬於顯示文字例外（只做「空白也能用」＋「去頭尾空白」），CLAUDE.md 顯示文字例外補上；
+　　　開關狀態不記住，換關、重開遊戲都從關著開始
+- [ ] U237 更多開關類功能：無限跳、遊戲速度（拉桿，例如 0.25～2 倍）、敵人凍結、鏡頭拉遠看整個房間
+	  （驗證：`tests/cheats/CheatMoreTest.tscn`）
+	  　　→ 注意：`HitStopManager`、`PauseMenu` 結束時會把 `Engine.time_scale` 設回 1.0，要改成回到作弊設定的速度
+- [ ] U238 一次性功能：數值補滿／加值（種類用下拉，跟 Pickup 一樣有「自訂」）、跳到下一個／上一個房間、在這裡設重生點、直接過關
+	  （驗證：`tests/cheats/CheatActionTest.tscn`）
+- [ ] U239 `cheats/DevCheats`：拖進關卡就把所有功能綁在 F 鍵上，畫面角落列出哪些開著；`editor_only` 勾選框預設勾著，只在編輯器按 Play 時有效，匯出的版本自動失效
+	  （驗證：`tests/cheats/DevCheatsTest.tscn`）
+　　→ 講師決定：Godot 4.7 預設把遊戲嵌在編輯器裡跑，F 鍵可能會被編輯器快捷鍵吃掉（例如 F8 停止），做之前先實測，不行就換一組鍵
+- [ ] U240 煙霧測試加入 `cheats/`；README、速查表、零件手冊補上作弊模式
+
 ## 之後再做（構想，還沒排進單元）
 
 - GameFlow 加上狀態：管理「開始 → 進行中 → 過關／Game Over」，學員可以聽狀態變化的訊號；
