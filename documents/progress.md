@@ -1200,6 +1200,9 @@
 	  （驗證：`tests/ui/SettingsPageTest.tscn`）
 - [ ] U245 三個標題範本（`TitleScreenTemplate`、`_Center`、`_Side`）加上「設定」鍵和設定頁；文件補上做法
 	  （驗證：打開範本按 F6）
+　　→ 實作：「打開設定」找同一個場景檔（`owner` 相同）的設定頁，找不到而場景裡只有一個就用它；Esc 用 `_unhandled_input` 先收（關卡場景比自動載入的 PauseMenu 先收到）。
+　　　音量拉桿的 HSlider 是內部節點，選取要連內部節點一起找。已經再製過的標題不會自動多出設定鍵，README、速查表寫了怎麼自己加。
+　　　`W4_SkinBox` 的示範標題（`TitleDemo`）沒有加
 
 ## 之後再做（構想，還沒排進單元）
 

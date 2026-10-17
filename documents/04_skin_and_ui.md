@@ -165,6 +165,7 @@ const TIMELINE := "時間軸"
 |---|---|---|
 | `MenuAction` | `Button` | `action` 下拉：繼續遊戲／整關重來／離開遊戲／開始遊戲／回標題（後兩個 U189）。按下去就執行，不用連 `pressed`。「離開遊戲」在 Web 版自動藏起來；「回標題」在主場景不是標題畫面、或現在就在標題上時自動藏起來；「開始遊戲」多一格 `level` 下拉（掃 `_my/`、`levels/_starts/` 的關卡，排除最上層是 `UIRoot` 的場景；存去掉 `res://` 的路徑，另外記 UID，改名搬家還找得到；沒選、找不到時黃色驚嘆號＋中文警告）。U224：「音效」群組 `press_sound`／`select_sound`（跟畫面一樣／無／內建音效／自訂），選「跟畫面一樣」以外的自己播，`UIRoot` 就跳過它 |
 | `VolumeSlider` | `HSlider` | `bus` 下拉：主音量／音效／音樂。跟現在暫停選單的拉桿同一套存檔（`user://settings.cfg`） |
+| `SettingsPage`（U244） | `Control` | 設定頁：平常藏著（場景檔 `visible = false`，遊戲開始時也一律藏起來），底下有三條 `VolumeSlider`、`TouchSwitch`、`MenuAction` 返回。`MenuAction` 的「打開設定」打開同一個場景檔（`owner` 相同）裡的設定頁、選取跳到第一個能選的東西；「返回」關掉自己所在的設定頁、選取回到打開它的按鈕。開著時 Esc 先關設定頁（`set_input_as_handled`，暫停選單收不到）；所在的畫面被藏起來時自己也關。找不到設定頁、「返回」不在設定頁裡時黃色驚嘆號＋中文警告 |
 | `ClearStat` | `Label` | 過關畫面專用：`stat` 下拉：用了幾秒／死了幾次／製作者的話。照 `ClearScreen` 的勾選決定要不要顯示 |
 
 ### 4.3 整套換字型與配色（講師決定：做）
@@ -254,7 +255,7 @@ Input Map 沒有「觸控」可以加，所以手機操控做成畫面上的虛�
 | `HudTemplate.tscn` | HUD | 左上角血條（`HudBar` 血量）＋金幣（`HudNumber`） |
 | `PauseMenuTemplate.tscn` | 暫停選單 | 半透明底、標題、三條 `VolumeSlider`、`MenuAction` 繼續遊戲／整關重來／離開遊戲、「Esc／P 繼續」提示 |
 | `ClearScreenTemplate.tscn` | 過關畫面 | 「過關！」、`ClearStat` 時間／死亡次數／製作者的話、`MenuAction` 回標題、「按 R 再玩一次」提示 |
-| `TitleScreenTemplate.tscn` | 標題畫面 | 上中下 1：2：1.4，上遊戲名（`GameName`）、中主視覺（`KeyArt`）、下「開始遊戲」「離開遊戲」＋一行小字（`Hook`） |
+| `TitleScreenTemplate.tscn` | 標題畫面 | 上中下 1：2：1.4，上遊戲名（`GameName`）、中主視覺（`KeyArt`）、下「開始遊戲」「設定」「離開遊戲」＋一行小字（`Hook`）；最上層底下有藏著的 `SettingsPage`（U245，三個標題範本都有） |
 | `TitleScreenTemplate_Center.tscn` | 標題畫面 | 暗色；主視覺鋪滿當背景，遊戲名在上，按鈕和小字在置中的底框裡 |
 | `TitleScreenTemplate_Side.tscn` | 標題畫面 | 復古綠；左邊遊戲名、小字、按鈕，右邊主視覺 |
 

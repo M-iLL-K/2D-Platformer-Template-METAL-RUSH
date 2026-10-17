@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://ui/HudText.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://ui/MenuAction.tscn" id="3"]
 [ext_resource type="Texture2D" path="res://ui/templates/_art/KeyArtPlaceholder.png" id="4"]
+[ext_resource type="PackedScene" path="res://ui/SettingsPage.tscn" id="5"]
 
 [node name="TitleScreenTemplate" type="Control"]
 layout_mode = 1
@@ -78,6 +79,12 @@ layout_mode = 2
 text = "開始遊戲"
 action = 3
 
+[node name="Settings" parent="Layout/Bottom/Buttons" instance=ExtResource("3")]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "設定"
+action = 5
+
 [node name="Quit" parent="Layout/Bottom/Buttons" instance=ExtResource("3")]
 custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
@@ -89,3 +96,6 @@ layout_mode = 2
 theme_type_variation = &"HintLabel"
 text = "一句話告訴玩家這是什麼遊戲"
 horizontal_alignment = 1
+
+[node name="SettingsPage" parent="." instance=ExtResource("5")]
+layout_mode = 1

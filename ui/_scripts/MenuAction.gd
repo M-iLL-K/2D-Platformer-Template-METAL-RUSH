@@ -188,12 +188,15 @@ func _own_settings_page(pages: Array) -> Node:
 			return page
 	return null
 
-# 「打開設定」「返回」的設定有什麼問題（編輯器裡掃正在編輯的場景），沒問題回傳空字串
+# 「打開設定」「返回」的設定有什麼問題（編輯器裡掃正在編輯的場景，遊戲中看場景裡所有的設定頁），沒問題回傳空字串
 func _settings_problem() -> String:
 	if action != ACTION_SETTINGS and action != ACTION_BACK:
 		return ""
-	var root: Node = get_tree().edited_scene_root if Engine.is_editor_hint() else get_tree().current_scene
-	var pages := _SettingsPage.find_in(root)
+	var pages: Array = []
+	if Engine.is_editor_hint():
+		pages = _SettingsPage.find_in(get_tree().edited_scene_root)
+	else:
+		pages = get_tree().get_nodes_in_group("settings_page")
 	if action == ACTION_SETTINGS and pages.is_empty():
 		return "畫面裡沒有設定頁，按了不會有反應：從 ui/ 拖一個 SettingsPage 進這個畫面（放最上層底下）"
 	if action == ACTION_BACK and _own_settings_page(pages) == null:
