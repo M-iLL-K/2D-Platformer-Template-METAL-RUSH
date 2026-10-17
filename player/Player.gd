@@ -72,6 +72,7 @@ var _replaying_jump: bool = false   # 正在重播預輸入的跳躍鍵（這時
 var _invincible_sources: Dictionary = {}  # 開無敵的組件(Node) -> 是不是連死都不會死（bool）
 var _free_move_sources: Dictionary = {}   # 開自由移動的組件(Node) -> [要不要穿牆(bool), 飛多快(float)]
 var _saved_collision_mask: int = -1       # 穿牆前原本的碰撞遮罩，-1 代表現在沒在穿牆
+var _infinite_jump_sources: Dictionary = {}  # 開無限跳的組件(Node) -> true
 
 const _JuiceLayer := preload("res://player/JuiceLayer.gd")
 
@@ -457,6 +458,14 @@ func _update_pass_walls() -> void:
 		collision_mask = _saved_collision_mask
 		_saved_collision_mask = -1
 
+# 開關無限跳，作弊這類組件用這個：開著時在空中也算「可以從地面起跳」，一直按跳就一直往上跳。
+# 好幾個組件同時開時，全部關掉才恢復
+func set_infinite_jump(source: Node, on: bool) -> void:
+	if on:
+		_infinite_jump_sources[source] = true
+	else:
+		_infinite_jump_sources.erase(source)
+
 # 有沒有人開了「連死都不會死」
 func _has_no_death() -> bool:
 	_drop_freed_sources(_invincible_sources)
@@ -533,6 +542,9 @@ func is_on_ground() -> bool:
 # 二段跳、蹬牆跳這類卡用這個判斷「現在算不算在地上」，才不會把土狼時間裡的跳躍當成空中跳
 func can_ground_jump() -> bool:
 	if is_on_floor():
+		return true
+	_drop_freed_sources(_infinite_jump_sources)
+	if not _infinite_jump_sources.is_empty():
 		return true
 	return late_jump_enabled and _late_jump_left > 0.0 and velocity.dot(up_direction) <= 0.0
 

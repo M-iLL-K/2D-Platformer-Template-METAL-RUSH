@@ -38,6 +38,33 @@ signal code_entered
 		_refresh_editor()
 ## 飛多快（每秒幾像素，一格是 16 像素）
 @export_range(100.0, 600.0) var fly_speed: float = 250.0
+## 無限跳：在空中也能一直跳
+@export var infinite_jump: bool = false:
+	set(value):
+		infinite_jump = value
+		_refresh_editor()
+## 改變遊戲速度：整個遊戲變慢（慢動作）或變快
+@export var change_speed: bool = false:
+	set(value):
+		change_speed = value
+		_refresh_editor()
+## 遊戲速度：1 = 正常，0.5 = 慢一半，2 = 快一倍
+@export_range(0.25, 2.0) var game_speed: float = 0.5:
+	set(value):
+		game_speed = value
+		_refresh_editor()
+## 敵人凍結：所有敵人停住不動，碰到也不會受傷（子彈、攻擊也打不到它們）
+@export var freeze_enemies: bool = false:
+	set(value):
+		freeze_enemies = value
+		_refresh_editor()
+## 鏡頭拉遠：畫面看得更大，方便看整個房間和旁邊的房間
+@export var zoom_out: bool = false:
+	set(value):
+		zoom_out = value
+		_refresh_editor()
+## 鏡頭拉遠時，畫面看到原本的幾倍大
+@export_range(1.5, 4.0) var zoom_out_size: float = 2.0
 
 @export_group("解鎖方式")
 ## 怎麼打開這個作弊：按鍵指令＝依序按下 code 的那幾個鍵；選單勾選框＝拖進暫停選單裡變成一個勾選框；
@@ -73,6 +100,7 @@ var _on: bool = false
 var _typed: String = ""        # 最近按下的幾個字母、數字
 var _last_key_ms: int = 0      # 上一次按下字母、數字的時間（毫秒）
 var _check: CheckButton = null # 選單勾選框（開場建的，不存進場景）
+var _frozen_enemies: Dictionary = {}  # 凍結中的敵人(Node) -> 原本的 process_mode
 var _syncing: bool = false
 
 # 選單勾選框的話建出勾選框；遊戲中加入群組（連線驗證器檢查訊號連線、「作弊中」小字問要顯示什麼）
@@ -225,8 +253,17 @@ func _on_check_toggled(on: bool) -> void:
 	if not _syncing and not Engine.is_editor_hint():
 		set_on(on)
 
-# 把開關類的功能套到玩家身上（on＝打開、false＝恢復原狀）
+# 把開關類的功能套上去（on＝打開、false＝恢復原狀）
 func _apply_toggles(on: bool) -> void:
+	if change_speed:
+		HitStopManager.set_game_speed(self, on, game_speed)
+	if freeze_enemies:
+		if on:
+			_freeze_new_enemies()
+		else:
+			_unfreeze_enemies()
+	if zoom_out:
+		_apply_zoom_out(on)
 	var player := _find_player()
 	if player == null:
 		return
@@ -234,6 +271,36 @@ func _apply_toggles(on: bool) -> void:
 		player.set_invincible(self, on, no_death)
 	if fly or pass_walls:
 		player.set_free_move(self, on, pass_walls, fly_speed)
+	if infinite_jump:
+		player.set_infinite_jump(self, on)
+
+# 敵人凍結開著時，每幀把新出現的敵人（例如重生時放回來的）也凍住
+func _physics_process(_delta: float) -> void:
+	if not Engine.is_editor_hint() and _on and freeze_enemies:
+		_freeze_new_enemies()
+
+# 把還沒凍住的敵人停住：記下原本的 process_mode 再整個停掉（連它底下的攻擊組件一起停）
+func _freeze_new_enemies() -> void:
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		if not _frozen_enemies.has(enemy):
+			_frozen_enemies[enemy] = enemy.process_mode
+			enemy.process_mode = Node.PROCESS_MODE_DISABLED
+
+# 把凍住的敵人全部恢復原本的 process_mode
+func _unfreeze_enemies() -> void:
+	for enemy in _frozen_enemies:
+		if is_instance_valid(enemy):
+			enemy.process_mode = _frozen_enemies[enemy]
+	_frozen_enemies.clear()
+
+# 鏡頭拉遠或恢復；鏡頭不是關卡用的 CameraRig 就印中文警告
+func _apply_zoom_out(on: bool) -> void:
+	var camera := get_viewport().get_camera_2d()
+	if camera != null and camera.has_method("set_view_size"):
+		camera.set_view_size(self, on, zoom_out_size)
+	elif on:
+		push_warning("[作弊] %s 找不到關卡用的鏡頭，鏡頭拉遠沒有效果" % name)
+		print("[作弊] %s：鏡頭拉遠要用關卡的鏡頭（掛 levels/_shared/CameraRig.gd 的 Camera2D），這個場景沒有" % name)
 
 # 找到場景裡的玩家，找不到就印中文警告
 func _find_player() -> Node:
@@ -245,7 +312,7 @@ func _find_player() -> Node:
 
 # 有沒有勾任何開關類的功能
 func _has_toggles() -> bool:
-	return invincible or no_death or fly or pass_walls
+	return invincible or no_death or fly or pass_walls or infinite_jump or change_speed or freeze_enemies or zoom_out
 
 # 開了哪些功能，排成「無敵、飛行」
 func _feature_text() -> String:
@@ -258,7 +325,20 @@ func _feature_text() -> String:
 		names.append("飛行穿牆")
 	elif fly:
 		names.append("飛行")
+	if infinite_jump:
+		names.append("無限跳")
+	if change_speed:
+		names.append("遊戲速度 %s 倍" % _num(game_speed))
+	if freeze_enemies:
+		names.append("敵人凍結")
+	if zoom_out:
+		names.append("鏡頭拉遠")
 	return "、".join(names) if not names.is_empty() else "（沒有功能）"
+
+# 數字最多兩位小數，整數不寫小數點（2 而不是 2.0）
+static func _num(value: float) -> String:
+	var v := snappedf(value, 0.01)
+	return str(int(v)) if is_equal_approx(v, roundf(v)) else String.num(v)
 
 # 設定有沒有問題，回傳中文說明（編輯器黃色驚嘆號跟執行時警告共用）
 func _get_problems() -> PackedStringArray:
@@ -320,6 +400,10 @@ func _get_configuration_warnings() -> PackedStringArray:
 # 沒有飛行時藏起飛行速度；解鎖方式不是按鍵指令時藏起指令與間隔
 func _validate_property(property: Dictionary) -> void:
 	if property.name == "fly_speed" and not (fly or pass_walls):
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+	if property.name == "game_speed" and not change_speed:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+	if property.name == "zoom_out_size" and not zoom_out:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 	if property.name in ["code", "delay"] and unlock_by != UNLOCK_CODE:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
