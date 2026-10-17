@@ -525,6 +525,12 @@ func stop_motion() -> void:
 	velocity = Vector2.ZERO
 	_impulse_grace_left = 0.0
 
+# 把玩家瞬間移到指定位置、速度歸零（不算死亡也不算重生），作弊的「換房間」這類組件用這個
+func teleport(at_position: Vector2) -> void:
+	global_position = at_position
+	velocity = Vector2.ZERO
+	_impulse_grace_left = 0.0
+
 # 停在原地：不受重力、不能移動、不能跳，直到呼叫 unfreeze() 或死亡重生為止
 func freeze() -> void:
 	_frozen = true
