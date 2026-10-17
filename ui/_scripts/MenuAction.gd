@@ -6,9 +6,10 @@ extends Button
 # 「整關重來」在關卡裡沒有 RespawnHandler 時自動藏起來，「離開遊戲」在網頁版自動藏起來，
 # 「回標題」在主場景不是標題畫面（或現在就在標題畫面）時自動藏起來。
 # 「開始遊戲」在下拉選單選要去哪一關，按下去換到那個場景（標題畫面用）。
+# 「打開設定」打開同一個畫面裡的設定頁（ui/SettingsPage），「返回」關掉自己所在的設定頁。
 
 ## 按下去要做什麼
-@export_enum("繼續遊戲", "整關重來", "離開遊戲", "開始遊戲", "回標題") var action: int = ACTION_RESUME:
+@export_enum("繼續遊戲", "整關重來", "離開遊戲", "開始遊戲", "回標題", "打開設定", "返回") var action: int = ACTION_RESUME:
 	set(value):
 		if text == "" or text == _NAMES[action]:
 			text = _NAMES[value]
@@ -55,8 +56,11 @@ const ACTION_RESTART := 1
 const ACTION_QUIT := 2
 const ACTION_START := 3
 const ACTION_TITLE := 4
+const ACTION_SETTINGS := 5
+const ACTION_BACK := 6
 
-const _NAMES := ["繼續遊戲", "整關重來", "離開遊戲", "開始遊戲", "回標題"]
+const _NAMES := ["繼續遊戲", "整關重來", "離開遊戲", "開始遊戲", "回標題", "設定", "返回"]
+const _SettingsPage := preload("res://ui/_scripts/SettingsPage.gd")
 # 「開始遊戲」的下拉選單從這些資料夾找關卡
 const _LEVEL_DIRS := ["res://_my", "res://levels/_starts"]
 const _SCAN_GAP_MS := 2000
@@ -144,6 +148,57 @@ func _on_pressed() -> void:
 			_start_level()
 		ACTION_TITLE:
 			PauseMenu.go_to_title()
+		ACTION_SETTINGS:
+			_open_settings()
+		ACTION_BACK:
+			_close_settings()
+
+# 打開同一個畫面裡的設定頁；找不到就印中文警告
+func _open_settings() -> void:
+	var page := _find_settings_page()
+	if page == null:
+		var problem := _settings_problem()
+		push_warning("[%s] %s" % [name, problem])
+		printerr("⚠ [%s] %s" % [name, problem])
+		return
+	page.open(self)
+
+# 關掉自己所在的設定頁；不在設定頁裡就印中文警告
+func _close_settings() -> void:
+	var page := _own_settings_page(get_tree().get_nodes_in_group("settings_page"))
+	if page == null:
+		var problem := _settings_problem()
+		push_warning("[%s] %s" % [name, problem])
+		printerr("⚠ [%s] %s" % [name, problem])
+		return
+	page.close()
+
+# 「打開設定」要開的設定頁：跟這顆按鈕在同一個場景檔裡的那個（標題畫面、自己的暫停選單），沒有的話場景裡只有一個就用它
+func _find_settings_page() -> Node:
+	var pages := get_tree().get_nodes_in_group("settings_page")
+	for page in pages:
+		if page.owner == owner and owner != null:
+			return page
+	return pages[0] if pages.size() == 1 else null
+
+# 自己被放在哪個設定頁裡面（從設定頁往下看，不往上爬），不在任何設定頁裡回傳 null
+func _own_settings_page(pages: Array) -> Node:
+	for page in pages:
+		if page.is_ancestor_of(self):
+			return page
+	return null
+
+# 「打開設定」「返回」的設定有什麼問題（編輯器裡掃正在編輯的場景），沒問題回傳空字串
+func _settings_problem() -> String:
+	if action != ACTION_SETTINGS and action != ACTION_BACK:
+		return ""
+	var root: Node = get_tree().edited_scene_root if Engine.is_editor_hint() else get_tree().current_scene
+	var pages := _SettingsPage.find_in(root)
+	if action == ACTION_SETTINGS and pages.is_empty():
+		return "畫面裡沒有設定頁，按了不會有反應：從 ui/ 拖一個 SettingsPage 進這個畫面（放最上層底下）"
+	if action == ACTION_BACK and _own_settings_page(pages) == null:
+		return "「返回」要放在設定頁（SettingsPage）裡面才有用：把這顆按鈕拖進 SettingsPage 的 Center/Panel/List 底下"
+	return ""
 
 # 換到選好的關卡；沒選、檔案不見了就印中文警告，不換
 func _start_level() -> void:
@@ -194,6 +249,10 @@ func _get_configuration_warnings() -> PackedStringArray:
 	var problem := _level_problem()
 	if problem != "":
 		warnings.append(problem)
+	if is_inside_tree():
+		var settings_problem := _settings_problem()
+		if settings_problem != "":
+			warnings.append(settings_problem)
 	warnings.append_array(_sound_problems())
 	return warnings
 
