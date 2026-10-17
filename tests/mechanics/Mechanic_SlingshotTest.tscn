@@ -90,6 +90,7 @@ region_rect = Rect2(0, 0, 16, 32)
 
 [node name="Mechanic_Slingshot" parent="Player/Mechanics" unique_id=861133225 instance=ExtResource("4")]
 input_type = 0
+look = 8
 line_width = 3.94
 
 [node name="Ability_Melee" parent="Player/Mechanics" unique_id=942224850 instance=ExtResource("5_8eiyh")]
