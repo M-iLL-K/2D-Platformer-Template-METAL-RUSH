@@ -46,13 +46,16 @@ script = ExtResource("7")
 [node name="RespawnHandler" parent="." instance=ExtResource("6")]
 
 [node name="Cheat_Invincible" parent="." instance=ExtResource("8")]
+unlock_by = 2
 invincible = true
 
 [node name="Cheat_Fly" parent="." instance=ExtResource("8")]
+unlock_by = 2
 fly = true
 pass_walls = true
 
 [node name="Cheat_Empty" parent="." instance=ExtResource("8")]
+unlock_by = 2
 
 [node name="UI" type="CanvasLayer" parent="."]
 

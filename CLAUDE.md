@@ -87,7 +87,7 @@ Claude Code 在這個專案裡的所有對話回覆、進度回報、驗收結�
 
 名稱的整理與近似比對一律呼叫共用工具 `NameCheck`，不要在組件裡各寫一份。
 目前的打字欄位：`ValueSettings.kind`（數值種類，見 `documents/01a_shared_systems.md` §4.1）、
-`Button.tag`、`AreaTrigger.tag`（誰會觸發選「指定群組」才出現）、`Pickup.custom_kind`（種類選「自訂」才出現）、`Door.custom_kind`（開門方式選「自訂數值」才出現）（見 `documents/01c_blocks_and_abilities.md`）、`Juice_TextPopup.custom_kind`（種類選「自訂」才出現，見 `documents/03_game_feel_juice.md` §3.2）。新增打字欄位時要補進這份清單。
+`Button.tag`、`AreaTrigger.tag`（誰會觸發選「指定群組」才出現）、`Pickup.custom_kind`（種類選「自訂」才出現）、`Door.custom_kind`（開門方式選「自訂數值」才出現）（見 `documents/01c_blocks_and_abilities.md`）、`Juice_TextPopup.custom_kind`（種類選「自訂」才出現，見 `documents/03_game_feel_juice.md` §3.2）、`Cheat.code`（作弊的按鍵指令，解鎖方式選「按鍵指令」才出現；不是名稱而是要按的鍵，講師決定開放，只收英文字母與數字、去空白、全形轉半形、轉小寫，見 `documents/progress.md` U235）。新增打字欄位時要補進這份清單。
 
 **顯示文字例外（講師決定）**：`ClearScreen.message`（過關畫面最下面製作者選填的一行字）是純顯示用的文字，不拿去比對任何東西，
 所以只需要做到「不打字也能用（空白就不顯示）」和「去掉頭尾空白」，不需要編輯器檢查與近似建議。

@@ -2,6 +2,7 @@
 extends HBoxContainer
 
 # 作弊：拖進關卡就能用，不用連任何線。勾選要開哪些功能，再選怎麼打開。
+# 預設是「按鍵指令」：在遊戲裡依序按下 code 打的那幾個鍵（預設 wwssadad，也就是上上下下左右左右）就會打開，再按一次關掉。
 # 開關類的功能（無敵、飛行…）打開後一直有效，再觸發一次就關掉；拔掉這個組件時，它開的效果全部跟著關掉。
 # 想用自己的按鈕、勾選框、零件來開：解鎖方式選「只當接口」，再把它們的訊號連到這裡的
 # turn_on／turn_off／toggle（按鈕的 pressed、零件的訊號）或 set_on／set_off（勾選框的 toggled）。
@@ -10,6 +11,8 @@ extends HBoxContainer
 signal turned_on
 ## 關掉作弊的時候發出
 signal turned_off
+## 按鍵指令輸入完成的那一刻發出，在打開或關掉之前（例如接「叮」的音效）
+signal code_entered
 
 @export_group("開關類")
 ## 無敵：碰到敵人、尖刺、按 H 這類受傷都不扣血、不被彈開（掉進岩漿、被秒殺還是會死）
@@ -36,18 +39,31 @@ signal turned_off
 @export_range(100.0, 600.0) var fly_speed: float = 250.0
 
 @export_group("解鎖方式")
-## 怎麼打開這個作弊：只當接口＝自己把按鈕、勾選框、零件的訊號連過來
-@export_enum("只當接口:2") var unlock_by: int = UNLOCK_SIGNAL:
+## 怎麼打開這個作弊：按鍵指令＝依序按下 code 的那幾個鍵；只當接口＝自己把按鈕、勾選框、零件的訊號連過來
+@export_enum("按鍵指令:0", "只當接口:2") var unlock_by: int = UNLOCK_CODE:
 	set(value):
 		unlock_by = value
 		_refresh_editor()
+## 按鍵指令：打英文字母或數字，就是依序按鍵盤上的這幾個鍵（大小寫都可以），例如 wwssadad＝上上下下左右左右
+@export var code: String = DEFAULT_CODE:
+	set(value):
+		code = value
+		_refresh_editor()
+## 兩個鍵之間最多可以隔幾秒，隔太久就要從頭按
+@export_range(0.3, 3.0) var delay: float = 1.0
 ## 打開的時候畫面上方顯示「作弊中」和開了哪些功能
 @export var show_label: bool = true
 
+const UNLOCK_CODE := 0
 const UNLOCK_SIGNAL := 2
+const DEFAULT_CODE := "wwssadad"
+# 指令短於這個長度很容易亂按就觸發，編輯器會提醒
+const _MIN_CODE_LENGTH := 4
 const CheatLabel := preload("res://cheats/_scripts/CheatLabel.gd")
 
 var _on: bool = false
+var _typed: String = ""        # 最近按下的幾個字母、數字
+var _last_key_ms: int = 0      # 上一次按下字母、數字的時間（毫秒）
 
 # 遊戲中加入群組（連線驗證器檢查訊號連線、「作弊中」小字問要顯示什麼）
 func _ready() -> void:
@@ -59,6 +75,50 @@ func _ready() -> void:
 	for problem in _get_problems():
 		push_warning("[作弊] %s：%s" % [name, problem])
 		print("[作弊] %s：%s" % [name, problem])
+
+# 按鍵指令：記下按了哪些字母、數字，最後幾個鍵跟指令一樣就觸發；隔太久沒按就從頭算
+func _input(event: InputEvent) -> void:
+	if Engine.is_editor_hint() or unlock_by != UNLOCK_CODE:
+		return
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	var typed := _key_to_char((event as InputEventKey).physical_keycode)
+	if typed == "":
+		return
+	var now := Time.get_ticks_msec()
+	if now - _last_key_ms > int(delay * 1000.0):
+		_typed = ""
+	_last_key_ms = now
+	var wanted := get_code()
+	_typed = (_typed + typed).right(wanted.length())
+	if wanted != "" and _typed == wanted:
+		_typed = ""
+		print("[作弊] %s 輸入了指令 %s" % [name, wanted])
+		code_entered.emit()
+		toggle()
+
+# 把按鍵換成指令用的字：英文字母（小寫）、數字（含右邊數字鍵盤），其他鍵回傳空字串
+func _key_to_char(key: Key) -> String:
+	if key >= KEY_A and key <= KEY_Z:
+		return char(key).to_lower()
+	if key >= KEY_0 and key <= KEY_9:
+		return char(key)
+	if key >= KEY_KP_0 and key <= KEY_KP_9:
+		return str(key - KEY_KP_0)
+	return ""
+
+# 回傳整理過、真正要按的指令：全形轉半形、去掉空白、轉小寫、只留英文字母和數字；空白就用預設指令
+func get_code() -> String:
+	var cleaned := _clean_code(code)
+	return cleaned if cleaned != "" else DEFAULT_CODE
+
+# 整理學員打的指令：全形轉半形、去掉所有空白、轉小寫、拿掉英文字母和數字以外的字
+static func _clean_code(text: String) -> String:
+	var result := ""
+	for c in NameCheck.clean(text).to_lower():
+		if (c >= "a" and c <= "z") or (c >= "0" and c <= "9"):
+			result += c
+	return result
 
 # 拔掉這個組件（或換關）時，它開的效果全部關掉
 func _exit_tree() -> void:
@@ -156,15 +216,61 @@ func _get_problems() -> PackedStringArray:
 	var problems := PackedStringArray()
 	if not _has_toggles():
 		problems.append("沒有勾任何功能，打開了也沒有效果：在 Inspector 勾選要開什麼")
+	if unlock_by == UNLOCK_CODE:
+		problems.append_array(_code_problems())
 	return problems
+
+# 按鍵指令有沒有問題：空白、有不能按的字、太短、跟別的作弊的指令重複或包含在裡面
+func _code_problems() -> PackedStringArray:
+	var problems := PackedStringArray()
+	var cleaned := _clean_code(code)
+	if cleaned == "":
+		problems.append("code 是空白的（或只有英文字母和數字以外的字），先用預設指令 %s" % DEFAULT_CODE)
+		return problems
+	var plain := NameCheck.clean(code).to_lower().replace(" ", "")
+	if plain != cleaned:
+		problems.append("code「%s」裡有英文字母和數字以外的字，按不出來，會當成「%s」" % [code.strip_edges(), cleaned])
+	if cleaned.length() < _MIN_CODE_LENGTH:
+		problems.append("code「%s」只有 %d 個鍵，玩的時候很容易不小心按到；建議至少 %d 個" % [cleaned, cleaned.length(), _MIN_CODE_LENGTH])
+	for other in _other_code_cheats():
+		var other_code: String = other.get_code()
+		if other_code == cleaned:
+			problems.append("跟 %s 的指令一樣（%s），按一次兩個會一起開關；想一次開好幾個功能，在同一個 Cheat 多勾幾個就好" % [other.name, cleaned])
+		elif other_code.contains(cleaned):
+			problems.append("指令 %s 包含在 %s 的指令 %s 裡面，按 %s 的時候這個會先被打開" % [cleaned, other.name, other_code, other.name])
+	return problems
+
+# 場景裡其他用按鍵指令打開的作弊（編輯器裡掃正在編輯的場景，遊戲中用群組）
+func _other_code_cheats() -> Array[Node]:
+	var out: Array[Node] = []
+	if not is_inside_tree():
+		return out
+	var nodes: Array[Node] = []
+	if Engine.is_editor_hint():
+		var root := get_tree().edited_scene_root
+		if root == null:
+			return out
+		var stack: Array[Node] = [root]
+		while not stack.is_empty():
+			var node: Node = stack.pop_back()
+			nodes.append(node)
+			stack.append_array(node.get_children())
+	else:
+		nodes = get_tree().get_nodes_in_group("cheat")
+	for node in nodes:
+		if node != self and node.get_script() == get_script() and node.unlock_by == UNLOCK_CODE:
+			out.append(node)
+	return out
 
 # 編輯器的黃色驚嘆號
 func _get_configuration_warnings() -> PackedStringArray:
 	return _get_problems()
 
-# 沒有飛行時藏起飛行速度
+# 沒有飛行時藏起飛行速度；解鎖方式不是按鍵指令時藏起指令與間隔
 func _validate_property(property: Dictionary) -> void:
 	if property.name == "fly_speed" and not (fly or pass_walls):
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+	if property.name in ["code", "delay"] and unlock_by != UNLOCK_CODE:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 
 # 編輯器裡改了勾選：重新整理 Inspector 跟黃色驚嘆號
