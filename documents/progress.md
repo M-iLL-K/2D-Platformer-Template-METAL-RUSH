@@ -1211,6 +1211,12 @@
 - [ ] U246 `Mechanic_Slingshot` 加 `show_drag_center`（預設開）：拖曳時在按下去的位置畫黃色中心點、半徑＝`max_drag_distance` 的淡白色範圍圈，
 	  和從中心點拉到滑鼠的黃線（拉出圈外停在圈上）；放開、重生時藏起來；中心點在世界座標，不跟著角色跑
 	  （驗證：`tests/mechanics/Mechanic_SlingshotTest.tscn`）
+- [ ] U247 彈弓中心點的外觀：`@export_group("中心點外觀")` 加 `center_style`（實線圈／虛線圈／沒有圈／只有中心點）、`range_follow_drag`
+	  （預設開＝圈跟著 `max_drag_distance`；關掉才出現 `range_size` 自己調圈大小，只是畫的大小）、`line_width`、`center_size`、
+	  `center_color`／`range_color`／`band_color`（取色器）、`center_texture`（拖圖片，空白畫圓點）；`show_drag_center` 關掉時整組藏起來；
+	  每次開始拉時照欄位重畫（U246 的限制一起解掉）；透明度 0 時中文警告（驗證：`tests/mechanics/Mechanic_SlingshotTest.tscn`）
+　　→ 講師決定：風格四種調法都要（樣式下拉、取色器、粗細拉桿、換圖）；圓圈大小可以跟可拉距離分開調。取色器、換圖記進 CLAUDE.md 例外清單
+　　→ 實作：彈弓卡改成 `@tool`（比照脫殼卡，`_ready` 在編輯器裡直接跳過），原本「選鍵盤按鍵才出現 key」在編輯器裡其實沒作用，這次一起修好
 
 ## 之後再做（構想，還沒排進單元）
 

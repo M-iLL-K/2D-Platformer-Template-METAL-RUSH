@@ -177,6 +177,16 @@ W1 的課堂活動是：學員線上抽一張**主限制卡** → 把對應的 `
 @export var show_aim_line: bool = true
 ## 拖曳時要不要畫出拉的中心點（按下去的位置）、可拉範圍圈，和從中心點拉到滑鼠的線
 @export var show_drag_center: bool = true
+@export_group("中心點外觀")   # show_drag_center 關掉時整組藏起來
+@export_enum("實線圈", "虛線圈", "沒有圈（只有中心點和拉線）", "只有中心點") var center_style: int = 0
+@export var range_follow_drag: bool = true        # 圈＝最遠能拉到的地方；關掉才出現 range_size
+@export_range(20.0, 400.0) var range_size: float = 150.0
+@export_range(1.0, 10.0) var line_width: float = 2.0
+@export_range(2.0, 40.0) var center_size: float = 5.0
+@export var center_color: Color                   # 取色器例外（U247）
+@export var range_color: Color
+@export var band_color: Color
+@export var center_texture: Texture2D             # 資源欄位例外，空白畫圓點
 ```
 `ctx.input_locked = true`。用 `InputRouter.bind_input(self, input_type, key, ...)` 以較高優先綁定拖曳鍵的
 按下／放開（預設滑鼠左鍵，Inspector 可比照近戰改選其他滑鼠按鍵或鍵盤按鍵；瞄準一律看滑鼠位置），
