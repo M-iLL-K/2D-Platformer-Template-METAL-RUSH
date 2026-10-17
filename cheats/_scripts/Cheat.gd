@@ -3,6 +3,7 @@ extends HBoxContainer
 
 # 作弊：拖進關卡就能用，不用連任何線。勾選要開哪些功能，再選怎麼打開。
 # 預設是「按鍵指令」：在遊戲裡依序按下 code 打的那幾個鍵（預設 wwssadad，也就是上上下下左右左右）就會打開，再按一次關掉。
+# 「選單勾選框」：拖進暫停選單（或標題畫面）裡，選單上就多一個勾選框讓玩家開關；換關、重開遊戲都從關著開始。
 # 開關類的功能（無敵、飛行…）打開後一直有效，再觸發一次就關掉；拔掉這個組件時，它開的效果全部跟著關掉。
 # 想用自己的按鈕、勾選框、零件來開：解鎖方式選「只當接口」，再把它們的訊號連到這裡的
 # turn_on／turn_off／toggle（按鈕的 pressed、零件的訊號）或 set_on／set_off（勾選框的 toggled）。
@@ -39,8 +40,9 @@ signal code_entered
 @export_range(100.0, 600.0) var fly_speed: float = 250.0
 
 @export_group("解鎖方式")
-## 怎麼打開這個作弊：按鍵指令＝依序按下 code 的那幾個鍵；只當接口＝自己把按鈕、勾選框、零件的訊號連過來
-@export_enum("按鍵指令:0", "只當接口:2") var unlock_by: int = UNLOCK_CODE:
+## 怎麼打開這個作弊：按鍵指令＝依序按下 code 的那幾個鍵；選單勾選框＝拖進暫停選單裡變成一個勾選框；
+## 只當接口＝自己把按鈕、勾選框、零件的訊號連過來
+@export_enum("按鍵指令:0", "選單勾選框:1", "只當接口:2") var unlock_by: int = UNLOCK_CODE:
 	set(value):
 		unlock_by = value
 		_refresh_editor()
@@ -51,10 +53,16 @@ signal code_entered
 		_refresh_editor()
 ## 兩個鍵之間最多可以隔幾秒，隔太久就要從頭按
 @export_range(0.3, 3.0) var delay: float = 1.0
+## 選單上勾選框的字，空白就用「作弊：」加上開了哪些功能
+@export var label: String = "":
+	set(value):
+		label = value
+		_build()
 ## 打開的時候畫面上方顯示「作弊中」和開了哪些功能
 @export var show_label: bool = true
 
 const UNLOCK_CODE := 0
+const UNLOCK_MENU := 1
 const UNLOCK_SIGNAL := 2
 const DEFAULT_CODE := "wwssadad"
 # 指令短於這個長度很容易亂按就觸發，編輯器會提醒
@@ -64,11 +72,17 @@ const CheatLabel := preload("res://cheats/_scripts/CheatLabel.gd")
 var _on: bool = false
 var _typed: String = ""        # 最近按下的幾個字母、數字
 var _last_key_ms: int = 0      # 上一次按下字母、數字的時間（毫秒）
+var _check: CheckButton = null # 選單勾選框（開場建的，不存進場景）
+var _syncing: bool = false
 
-# 遊戲中加入群組（連線驗證器檢查訊號連線、「作弊中」小字問要顯示什麼）
+# 選單勾選框的話建出勾選框；遊戲中加入群組（連線驗證器檢查訊號連線、「作弊中」小字問要顯示什麼）
 func _ready() -> void:
+	add_theme_constant_override("separation", 4)
+	_build()
 	if Engine.is_editor_hint():
 		return
+	if unlock_by == UNLOCK_MENU:
+		process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("cheat")
 	add_to_group("signal_source")
 	add_to_group("cheat_label_source")
@@ -137,6 +151,7 @@ func turn_on(..._args: Array) -> void:
 	_apply_toggles(true)
 	print("[作弊] %s 打開了：%s" % [name, _feature_text()])
 	CheatLabel.ensure(get_tree())
+	_sync()
 	turned_on.emit()
 
 # 關掉作弊：開關類的功能全部恢復原狀
@@ -146,6 +161,7 @@ func turn_off(..._args: Array) -> void:
 	_on = false
 	_apply_toggles(false)
 	print("[作弊] %s 關掉了" % name)
+	_sync()
 	turned_off.emit()
 
 # 開著就關、關著就開，按鈕的 pressed 連過來用
@@ -175,6 +191,39 @@ func get_label_text() -> String:
 	if not _on or not show_label:
 		return ""
 	return "作弊中：%s" % _feature_text()
+
+# 選單勾選框：拿掉舊的，重建一個勾選框（不存進場景）；其他解鎖方式什麼都不顯示
+func _build() -> void:
+	if not is_inside_tree():
+		return
+	if _check != null:
+		_check.queue_free()
+		_check = null
+	if unlock_by != UNLOCK_MENU:
+		return
+	_check = CheckButton.new()
+	_check.text = get_menu_text()
+	add_child(_check)
+	_check.toggled.connect(_on_check_toggled)
+	_sync()
+
+# 回傳選單勾選框上的字：有打 label 就用它，空白就用「作弊：」加上開了哪些功能
+func get_menu_text() -> String:
+	var text := label.strip_edges()
+	return text if text != "" else "作弊：%s" % _feature_text()
+
+# 讓勾選框顯示現在開著還是關著
+func _sync() -> void:
+	if _check == null:
+		return
+	_syncing = true
+	_check.button_pressed = _on
+	_syncing = false
+
+# 玩家點了選單上的勾選框
+func _on_check_toggled(on: bool) -> void:
+	if not _syncing and not Engine.is_editor_hint():
+		set_on(on)
 
 # 把開關類的功能套到玩家身上（on＝打開、false＝恢復原狀）
 func _apply_toggles(on: bool) -> void:
@@ -218,6 +267,8 @@ func _get_problems() -> PackedStringArray:
 		problems.append("沒有勾任何功能，打開了也沒有效果：在 Inspector 勾選要開什麼")
 	if unlock_by == UNLOCK_CODE:
 		problems.append_array(_code_problems())
+	if unlock_by == UNLOCK_MENU and not (get_parent() is Container):
+		problems.append("解鎖方式是「選單勾選框」，但沒有放在選單裡：拖進暫停選單的按鈕清單（例如 PauseMenuTemplate 的 List）底下，勾選框才會排好")
 	return problems
 
 # 按鍵指令有沒有問題：空白、有不能按的字、太短、跟別的作弊的指令重複或包含在裡面
@@ -272,9 +323,12 @@ func _validate_property(property: Dictionary) -> void:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 	if property.name in ["code", "delay"] and unlock_by != UNLOCK_CODE:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
+	if property.name == "label" and unlock_by != UNLOCK_MENU:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
 
-# 編輯器裡改了勾選：重新整理 Inspector 跟黃色驚嘆號
+# 編輯器裡改了勾選：重建選單勾選框（字會跟著功能變），重新整理 Inspector 跟黃色驚嘆號
 func _refresh_editor() -> void:
+	_build()
 	if Engine.is_editor_hint():
 		notify_property_list_changed()
 		update_configuration_warnings()
