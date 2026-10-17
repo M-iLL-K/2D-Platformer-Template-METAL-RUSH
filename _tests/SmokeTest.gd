@@ -160,6 +160,10 @@ func _run_all_steps() -> void:
 	await _test_squint()
 	await _assert_can_move("瞇眼測試")
 
+	# 18. 作弊：cheats/ 裡每個組件都放一次；兩個作弊開關類全開，跟機制卡一起掛、頓幀、被秒殺，開著的時候拔掉，效果要全部還原
+	await _test_cheats()
+	await _assert_can_move("作弊測試")
+
 	if _failed:
 		print("SMOKE TEST FAILED")
 		get_tree().quit(1)
@@ -869,6 +873,55 @@ func _test_squint() -> void:
 	squint.queue_free()
 	await _wait_frames(3)
 	Stats.add(Stats.HEALTH_KIND, 1)
+
+# 作弊組件：cheats/ 每個場景都放進來再拔掉；兩個開關類全開的作弊跟重力翻轉、子彈時間一起掛，
+# 頓幀、受傷、被秒殺、亂按跳躍，開著的時候直接拔掉，玩家的無敵、飛行、碰撞遮罩、遊戲速度都要還原
+func _test_cheats() -> void:
+	for path in _scan_scenes("res://cheats"):
+		var node: Node = load(path).instantiate()
+		add_child(node)
+		await _wait_frames(3)
+		node.queue_free()
+		await _wait_frames(2)
+	var mask := _player.collision_mask
+	var flip: Node = load("res://mechanics/Mechanic_GravityFlip.tscn").instantiate()
+	_mechanics_container.add_child(flip)
+	var cheats: Array[Node] = []
+	for i in 2:
+		var cheat: Node = load("res://cheats/Cheat.tscn").instantiate()
+		cheat.unlock_by = cheat.UNLOCK_SIGNAL
+		for key in ["no_death", "fly", "pass_walls", "infinite_jump", "change_speed", "freeze_enemies", "zoom_out", "add_value"]:
+			cheat.set(key, true)
+		add_child(cheat)
+		cheats.append(cheat)
+	await _wait_frames(2)
+	for cheat in cheats:
+		cheat.turn_on()
+	Events.hitstop_requested.emit(0.05)
+	_player.take_damage(1.0)
+	_player.kill()
+	if _player.is_dead():
+		_fail("作弊開了「不會死」，kill() 之後玩家還是死了")
+		_player.revive(Vector2.ZERO)
+	Input.action_press("jump")
+	Input.action_press("move_up")
+	await _wait_frames(10)
+	Input.action_release("jump")
+	Input.action_release("move_up")
+	cheats[0].toggle()
+	cheats[0].toggle()
+	await get_tree().create_timer(0.3, true, false, true).timeout
+	for cheat in cheats:
+		cheat.queue_free()
+	await _wait_frames(3)
+	if _player.is_invincible() or _player.is_free_moving() or _player.collision_mask != mask:
+		_fail("作弊拔掉之後，玩家的無敵、飛行、碰撞遮罩沒有還原")
+	if not is_equal_approx(Engine.time_scale, 1.0):
+		_fail("作弊拔掉之後 Engine.time_scale 應為 1.0，實際為 %s" % Engine.time_scale)
+		Engine.time_scale = 1.0
+	await _clear_container(_mechanics_container)
+	_player.up_direction = Vector2.UP
+	Stats.refill(Stats.HEALTH_KIND)
 
 # 讓 HUD 顯示的數值變化一輪：扣血、補血、撿金幣，中間各等幾幀
 func _ui_value_round() -> void:

@@ -1106,7 +1106,7 @@
 > 一個 `Cheat` 組件用勾選框多選要開哪些功能，分「開關類」（再觸發一次就關掉）與「一次性」（每觸發一次做一次）；
 > 解鎖方式用下拉選單分類：按鍵指令／選單勾選框／只當接口，每一種都有訊號可以串接。
 > 按鍵指令開放打字（例如 `wwssasas`），只限英文字母與數字，打什麼就是按鍵盤上的哪個鍵（大小寫不分、全形轉半形）。
-> 開發熱鍵做成獨立的 `DevCheats` 組件，拖進來就把所有功能綁在 F 鍵上，不用設定。
+> 開發熱鍵做成獨立的 `DevCheats` 組件，拖進來就把所有功能綁好熱鍵，不用設定（原本規劃 F 鍵，實作時改掉，見 U239）。
 > 組件放新的 `cheats/`（`.gd` 放 `cheats/_scripts/`），測試場景放 `tests/cheats/`。
 
 ## 階段 57：作弊模式
@@ -1116,31 +1116,55 @@
 	  （驗證：`tests/cheats/InvincibleTest.tscn`）
 　　→ 講師決定：要有「連掉坑、岩漿都不會死」，做法是 `kill()` 直接什麼事都不發生（不死、不傳送、不發訊號），不動 RespawnHandler。
 　　　已知限制：掉進無底洞會一直往下掉，要靠飛行飛回來
+　　→ 實作：`set_invincible(source, on, no_death)`，source 記在字典裡，被刪掉的 source 自動拿掉；`take_damage`／`take_hit` 無敵時直接 return（不發 hurt、hit）。
+　　　脫殼卡 `PinballBody` 的無敵是自己的彈開冷卻（加上 `ctx.damage_scale` 歸零），跟這個 API 各管各的，不會互相蓋掉
 - [ ] U233 Player 加自由移動 API：`set_free_move(source, on, pass_walls)`，開著時不受重力，用上下左右動作（WASD／方向鍵／手把／手機搖桿）自由飛，
 	  `pass_walls` 勾著就不撞地形；飛行時機制卡的移動修改（重力翻轉、無摩擦…）暫停，關掉後恢復；穿牆時房間切換、撿東西、碰觸發區照常運作
 	  （驗證：`tests/cheats/FreeMoveTest.tscn`）
+　　→ 實作：`set_free_move(source, on, pass_walls, speed)`；飛的時候 `_physics_process` 整段改走自由移動（機制卡的 `apply()` 不跑、不能跳、freeze() 照樣停住），
+　　　穿牆是把 Player 的 `collision_mask` 清成 0、關掉時還原（Room、道具、觸發區是它們自己偵測玩家的圖層，照常運作）。
+　　　已知限制：關掉穿牆時人卡在牆裡會出不來，要先飛出來再關
 - [ ] U234 `cheats/Cheat`：先做開關類的無敵、飛行、穿牆三個勾選框，解鎖方式先做「只當接口」；
 	  接口 `turn_on()`／`turn_off()`／`toggle()`／`set_on(on)`／`set_off(off)`，訊號 `turned_on`／`turned_off`；
 	  `show_label` 勾選框：開著時畫面角落顯示「作弊中」；拔掉 Cheat 時會把自己開的效果全部關掉
 	  （驗證：`tests/cheats/CheatTest.tscn`）
+　　→ 實作：`Cheat` 繼承 HBoxContainer（跟 `TouchSwitch` 一樣，才能放進選單）；放關卡最上層就好，用 player 群組找玩家。
+　　　「作弊中」小字是共用的 `cheats/_scripts/CheatLabel.gd`（第一次需要時建在目前的關卡裡，一個作弊一行）
 - [ ] U235 解鎖方式「按鍵指令」：`code` 打字欄（例如 `wwssasas`），`delay` 拉桿決定兩個鍵最多隔幾秒，超過就重來；輸入完成時觸發，並發出 `code_entered` 訊號
 	  （學員可以接 Juice 做音效、跳字）；打字欄四點防呆：空白時用預設指令、編輯器黃色驚嘆號（空白、有字母數字以外的字、太短、
 	  跟另一個 Cheat 的指令一樣或是它的開頭）、執行時中文警告、去空白＋全形轉半形＋轉小寫；CLAUDE.md 的打字欄位清單補上 `Cheat.code`
 	  （驗證：`tests/cheats/CheatCodeTest.tscn`）
+　　→ 實作：預設指令 `wwssadad`（上上下下左右左右），解鎖方式預設「按鍵指令」；用 `_input` 收實體按鍵，字母、上排數字、右邊數字鍵盤都算，
+　　　其他鍵（空白、方向鍵）不算也不打斷；比對「最後幾個鍵」所以按錯一個不用從頭來。指令被另一組包含時（例如 wwss 和 wwssadad）黃色驚嘆號
 - [ ] U236 解鎖方式「選單勾選框」：Cheat 拖進暫停選單就出現一個勾選框，做法跟 `TouchSwitch` 一樣（開場建的、套得上按鈕音效與鍵盤選取）；
 	  勾選框的字預設用開了哪些功能組成，`label` 打字欄可以自己取（空白就用預設）
 	  （驗證：`tests/cheats/CheatMenuTest.tscn`）
 　　→ 講師決定：`Cheat.label` 開放打字，屬於顯示文字例外（只做「空白也能用」＋「去頭尾空白」），CLAUDE.md 顯示文字例外補上；
 　　　開關狀態不記住，換關、重開遊戲都從關著開始
+　　→ 實作：沒放在 Container 底下時黃色驚嘆號（拖到關卡最上層的話勾選框不會排進選單）；從別處開關時勾選框跟著變
 - [ ] U237 更多開關類功能：無限跳、遊戲速度（拉桿，例如 0.25～2 倍）、敵人凍結、鏡頭拉遠看整個房間
 	  （驗證：`tests/cheats/CheatMoreTest.tscn`）
 	  　　→ 注意：`HitStopManager`、`PauseMenu` 結束時會把 `Engine.time_scale` 設回 1.0，要改成回到作弊設定的速度
+　　→ 實作：無限跳＝`Player.set_infinite_jump()`，開著時 `can_ground_jump()` 在空中也回傳 true（二段跳、蹬牆跳這類卡會讓給 Player 自己的跳）；
+　　　遊戲速度＝`HitStopManager.set_game_speed(source, on, speed)`，好幾個作弊一起開就乘起來，頓幀、子彈時間（`Extra_TimeSlow`）結束改回到遊戲速度；
+　　　換場景時 PauseMenu 照舊設回 1.0（作弊不記住，舊關卡的 Cheat 拔掉時也會拿掉自己的速度）。
+　　　敵人凍結＝把 enemy 群組的 `process_mode` 設成停用（連底下的 EnemyShooter 一起停，碰撞也會拿掉，所以碰到不會受傷、也打不到），
+　　　開著時每幀檢查新出現的敵人（重生放回來的），關掉還原。鏡頭拉遠＝`CameraRig.set_view_size(source, on, size)`，房間內跟隨的範圍照拉遠後的畫面算
 - [ ] U238 一次性功能：數值補滿／加值（種類用下拉，跟 Pickup 一樣有「自訂」）、跳到下一個／上一個房間、在這裡設重生點、直接過關
 	  （驗證：`tests/cheats/CheatActionTest.tscn`）
+　　→ 實作：只勾一次性功能時，作弊不會一直「開著」，每次觸發都做一次（選單上變成按鈕）；有勾開關類的話，打開的那一次順便做一次性功能。
+　　　換房間用 `Player.teleport()`（新的公開 API，速度歸零，不算死亡），目前房間看玩家站在哪個房間範圍裡；
+　　　設重生點用 `RespawnMemory.save_point()`（新的公開函式）；直接過關發 `Events.level_cleared`（終點不會變色）。
+　　　`Cheat.custom_kind` 是新的打字欄位，規則跟 `Pickup.custom_kind` 一樣，CLAUDE.md 清單已補上
 - [ ] U239 `cheats/DevCheats`：拖進關卡就把所有功能綁在 F 鍵上，畫面角落列出哪些開著；`editor_only` 勾選框預設勾著，只在編輯器按 Play 時有效，匯出的版本自動失效
 	  （驗證：`tests/cheats/DevCheatsTest.tscn`）
 　　→ 講師決定：Godot 4.7 預設把遊戲嵌在編輯器裡跑，F 鍵可能會被編輯器快捷鍵吃掉（例如 F8 停止），做之前先實測，不行就換一組鍵
+　　→ 實作：沒辦法在編輯器裡實測，F1～F8 本來就是編輯器快捷鍵，所以直接避開 F 鍵：按 `` ` ``（Tab 上面那顆）打開清單，
+　　　清單開著時 1～9、-、= 開關（0 是 Juice 總開關，不用）；清單收起來時數字鍵照常給遊戲用。功能是開場建出來的幾個「只當接口」的 Cheat。
+　　　`editor_only` 看 `OS.has_feature("editor")`。待驗收：遊戲嵌在編輯器的 Game 分頁裡時，` 和數字鍵有沒有被吃掉
 - [ ] U240 煙霧測試加入 `cheats/`；README、速查表、零件手冊補上作弊模式
+　　→ 實作：煙霧測試第 18 步：cheats/ 每個場景放一次；兩個開關類全開的 Cheat 跟重力翻轉一起掛，頓幀、受傷、被秒殺、亂按跳和上，
+　　　開著時拔掉，檢查無敵、飛行、碰撞遮罩、遊戲速度都還原。README §3.3、速查表 §1～§3 加列＋§7、零件手冊 §1 加 `cheats/`＋§9
 
 ## 之後再做（構想，還沒排進單元）
 

@@ -146,6 +146,7 @@ const _ROOM_PREV := 2
 const _MIN_CODE_LENGTH := 4
 const CheatLabel := preload("res://cheats/_scripts/CheatLabel.gd")
 
+var quiet: bool = false        # 開發熱鍵建出來的作弊設成 true：開場不印設定警告（真的按下去才提醒）
 var _on: bool = false
 var _typed: String = ""        # 最近按下的幾個字母、數字
 var _last_key_ms: int = 0      # 上一次按下字母、數字的時間（毫秒）
@@ -167,7 +168,7 @@ func _ready() -> void:
 	add_to_group("cheat")
 	add_to_group("signal_source")
 	add_to_group("cheat_label_source")
-	for problem in _get_problems():
+	for problem in (PackedStringArray() if quiet else _get_problems()):
 		push_warning("[作弊] %s：%s" % [name, problem])
 		print("[作弊] %s：%s" % [name, problem])
 

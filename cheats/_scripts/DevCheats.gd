@@ -1,7 +1,8 @@
 extends CanvasLayer
 
 # 開發熱鍵：給自己測關卡用，拖進關卡就能用，不用設定任何東西。
-# 按 `（鍵盤左上角、Tab 上面那顆）打開清單，清單開著時按數字鍵開關各種作弊，清單上會標出哪些開著。
+# 按 `（鍵盤左上角、Tab 上面那顆）打開清單，清單開著時按 1～9、-、= 開關各種作弊，清單上會標出哪些開著。
+# 不用 F 鍵（遊戲嵌在編輯器裡跑時可能被編輯器快捷鍵吃掉），也不用 0（Juice 總開關）。
 # editor_only 勾著（預設）的話只在編輯器按 Play 時有效，匯出成網頁版、執行檔給別人玩時自動失效，不用記得拔掉。
 # 底下的功能其實是幾個「只當接口」的 Cheat，開場自己建出來（不存進場景）。
 
@@ -21,8 +22,8 @@ const _ENTRIES := [
 	[KEY_7, "7", {"go_to_room": 1}],
 	[KEY_8, "8", {"go_to_room": 2}],
 	[KEY_9, "9", {"save_here": true}],
-	[KEY_0, "0", {"add_value": true, "value_kind": 2, "fill_up": true}],
-	[KEY_MINUS, "-", {"clear_level": true}],
+	[KEY_MINUS, "-", {"add_value": true, "value_kind": 2, "fill_up": true}],
+	[KEY_EQUAL, "=", {"clear_level": true}],
 ]
 
 var _cheats: Array[Node] = []
@@ -40,6 +41,7 @@ func _ready() -> void:
 		cheat.name = "DevCheat_%s" % entry[1]
 		cheat.unlock_by = cheat.UNLOCK_SIGNAL
 		cheat.show_label = false
+		cheat.quiet = true
 		var settings: Dictionary = entry[2]
 		for key in settings:
 			cheat.set(key, settings[key])
