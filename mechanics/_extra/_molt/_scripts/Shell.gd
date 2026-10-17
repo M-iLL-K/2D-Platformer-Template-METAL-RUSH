@@ -50,6 +50,8 @@ const _COLORS := [
 const _CUSTOM_COLOR := 6
 const _DEFAULT_SIZE := Vector2(16, 32)
 const _MASS := 1.0
+# 被玩家推的時候，殼的速度是玩家走路速度的幾倍（跟輕的箱子一樣）
+const _PUSH := 0.8
 # 不受重力時推完會慢慢停下，不會一直飄走
 const _FLOAT_DAMP := 3.0
 # 頂端平台的厚度，以及跟殼本體之間留的空隙（玩家站在平台上時碰不到殼本體，才不會把殼往下壓）
@@ -110,6 +112,13 @@ func get_color() -> Color:
 # 殼是不是已經碎掉了
 func is_broken() -> bool:
 	return _is_broken
+
+# 被玩家推（跟箱子一樣）：推得動的殼往 dir 的方向動，速度是玩家走路速度的 0.8 倍；推不動的殼不理
+func push(dir: int, speed: float) -> void:
+	if not can_push:
+		return
+	sleeping = false
+	linear_velocity.x = dir * speed * _PUSH
 
 # 暫時不跟某個東西互撞，等兩邊分開了才恢復；脫殼卡用這個讓剛脫下的殼不會把玩家擠開
 func ignore_until_apart(body: PhysicsBody2D) -> void:

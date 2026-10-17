@@ -189,7 +189,9 @@ func _physics_process(delta: float) -> void:
 	velocity = velocity.limit_length(max_speed)
 	_fix_corner(delta)
 
+	var push_speed: float = velocity.x * ctx.push_scale
 	move_and_slide()
+	_push_bodies(push_speed)
 
 	_emit_landing(pre_on_floor, pre_fall_speed)
 	_emit_wall_hit()
@@ -212,6 +214,22 @@ func _free_move() -> void:
 	_short_jump_armed = false
 	_impulse_grace_left = 0.0
 	move_and_slide()
+
+# 這一幀從側面撞到有 push() 的東西（箱子、推得動的殼）就推它：往撞過去的方向、用這一幀原本要走的速度（乘上推力倍率），
+# 推多快、推不推得動由對方自己決定；對方被牆卡住推不動時，玩家自然也被擋住
+func _push_bodies(push_speed: float) -> void:
+	if is_zero_approx(push_speed):
+		return
+	var dir := int(signf(push_speed))
+	for i in get_slide_collision_count():
+		var collision := get_slide_collision(i)
+		var body := collision.get_collider() as Node
+		if body == null or not body.has_method("push"):
+			continue
+		var normal := collision.get_normal()
+		if absf(normal.x) < 0.7 or int(signf(normal.x)) == dir:
+			continue
+		body.push(dir, absf(push_speed))
 
 # 按鍵手感：站在地上時補滿土狼時間、離開地面後倒數；空中按過跳躍、在時間內落地就重播一次跳躍鍵
 func _update_jump_assist(delta: float) -> void:
