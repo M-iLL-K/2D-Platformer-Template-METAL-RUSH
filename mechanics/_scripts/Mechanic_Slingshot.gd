@@ -24,6 +24,9 @@ extends MechanicBase
 ## 拖曳時要不要畫出瞄準線
 @export var show_aim_line: bool = true
 
+## 拖曳時要不要畫出拉的中心點（按下去的位置）、可拉範圍圈，和從中心點拉到滑鼠的線
+@export var show_drag_center: bool = true
+
 ## 開始拉的那一刻發出（例如連到 Player 的 stop_motion，拉的時候速度歸零）
 signal drag_started
 ## 放開、要射出去的那一刻發出，在推力之前（連到 Player 的 stop_motion 就是先歸零再射）；拉的距離是 0 也會發出
@@ -35,6 +38,14 @@ const _PRIORITY := 100
 var _dragging: bool = false
 var _drag_start: Vector2 = Vector2.ZERO
 var _aim_line: Line2D
+# 拉的中心點、可拉範圍圈、中心點拉到滑鼠的線；放在世界座標，角色移動時中心點不會跟著跑
+var _center_mark: Node2D
+
+# 中心點、範圍圈的顏色與大小
+const _CENTER_COLOR := Color(1.0, 0.85, 0.3, 0.9)
+const _RANGE_COLOR := Color(1.0, 1.0, 1.0, 0.35)
+const _CENTER_RADIUS := 5.0
+const _RANGE_POINTS := 48
 
 # input_type 的「Input Map 動作」選項
 const _INPUT_MAP_ACTION := 4
@@ -52,6 +63,8 @@ func _on_setup() -> void:
 		InputRouter.warn_if_dangerous_key(key, "[彈弓]")
 	InputRouter.bind_input(self, input_type, key, InputRouter.PRESSED, _on_drag_pressed, _PRIORITY, action)
 	InputRouter.bind_input(self, input_type, key, InputRouter.RELEASED, _on_drag_released, _PRIORITY, action)
+	if show_drag_center:
+		_make_center_mark()
 	if not show_aim_line:
 		return
 	_aim_line = Line2D.new()
@@ -66,6 +79,8 @@ func _on_drag_pressed() -> bool:
 		return false
 	_dragging = true
 	_drag_start = player.get_global_mouse_position()
+	if _center_mark:
+		_center_mark.global_position = _drag_start
 	drag_started.emit()
 	return true
 
@@ -85,12 +100,18 @@ func apply(ctx: MoveContext) -> void:
 		drag = drag.limit_length(max_drag_distance)
 		_aim_line.visible = true
 		_aim_line.points = PackedVector2Array([Vector2.ZERO, -drag])
+	if _dragging and _center_mark:
+		var pull: Vector2 = (player.get_global_mouse_position() - _drag_start).limit_length(max_drag_distance)
+		(_center_mark.get_node("Band") as Line2D).points = PackedVector2Array([Vector2.ZERO, pull])
+		_center_mark.visible = true
 
 # 重生時取消拖曳中的狀態、藏起瞄準線
 func on_respawn() -> void:
 	_dragging = false
 	if _aim_line:
 		_aim_line.visible = false
+	if _center_mark:
+		_center_mark.visible = false
 
 # 放開拖曳鍵：往拖曳的反方向發射，力道依拖曳距離比例縮放。launched 一定在推力之前發出，
 # 拉的距離是 0 也發，學員用 drag_started 凍住、launched 解凍時才不會卡在空中
@@ -98,6 +119,8 @@ func _release() -> void:
 	_dragging = false
 	if _aim_line:
 		_aim_line.visible = false
+	if _center_mark:
+		_center_mark.visible = false
 	var drag: Vector2 = player.get_global_mouse_position() - _drag_start
 	drag = drag.limit_length(max_drag_distance)
 	var ratio := drag.length() / max_drag_distance
@@ -107,3 +130,33 @@ func _release() -> void:
 	var direction := -drag.normalized()
 	player.add_impulse(direction * max_launch_force * ratio)
 	Events.mechanic_event.emit("Mechanic_Slingshot", "launched")
+
+# 生成拉的中心點（小圓點）、可拉範圍圈（半徑＝max_drag_distance）和中心點拉到滑鼠的線，平常藏著
+func _make_center_mark() -> void:
+	_center_mark = Node2D.new()
+	_center_mark.name = "DragCenter"
+	_center_mark.top_level = true
+	_center_mark.visible = false
+	add_child(_center_mark)
+	var ring := Line2D.new()
+	ring.width = 2.0
+	ring.default_color = _RANGE_COLOR
+	ring.closed = true
+	ring.points = _circle_points(max_drag_distance, _RANGE_POINTS)
+	_center_mark.add_child(ring)
+	var band := Line2D.new()
+	band.name = "Band"
+	band.width = 2.0
+	band.default_color = _CENTER_COLOR
+	_center_mark.add_child(band)
+	var dot := Polygon2D.new()
+	dot.color = _CENTER_COLOR
+	dot.polygon = _circle_points(_CENTER_RADIUS, 12)
+	_center_mark.add_child(dot)
+
+# 算出一圈圓周上的點
+func _circle_points(radius: float, count: int) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in count:
+		points.append(Vector2.RIGHT.rotated(TAU * i / count) * radius)
+	return points

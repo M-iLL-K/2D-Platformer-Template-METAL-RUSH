@@ -175,6 +175,8 @@ W1 的課堂活動是：學員線上抽一張**主限制卡** → 把對應的 `
 @export var ground_only: bool = true
 ## 拖曳時要不要畫出瞄準線
 @export var show_aim_line: bool = true
+## 拖曳時要不要畫出拉的中心點（按下去的位置）、可拉範圍圈，和從中心點拉到滑鼠的線
+@export var show_drag_center: bool = true
 ```
 `ctx.input_locked = true`。用 `InputRouter.bind_input(self, input_type, key, ...)` 以較高優先綁定拖曳鍵的
 按下／放開（預設滑鼠左鍵，Inspector 可比照近戰改選其他滑鼠按鍵或鍵盤按鍵；瞄準一律看滑鼠位置），
