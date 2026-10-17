@@ -52,6 +52,8 @@ const _DEFAULT_SIZE := Vector2(16, 32)
 const _MASS := 1.0
 # 被玩家推的時候，殼的速度是玩家走路速度的幾倍（跟輕的箱子一樣）
 const _PUSH := 0.8
+# 速度上限（像素／秒），跟箱子一樣：再快就可能一幀跳過整面牆（穿牆）
+const _MAX_SPEED := 960.0
 # 不受重力時推完會慢慢停下，不會一直飄走
 const _FLOAT_DAMP := 3.0
 # 頂端平台的厚度，以及跟殼本體之間留的空隙（玩家站在平台上時碰不到殼本體，才不會把殼往下壓）
@@ -112,6 +114,10 @@ func get_color() -> Color:
 # 殼是不是已經碎掉了
 func is_broken() -> bool:
 	return _is_broken
+
+# 每個物理幀把速度限制在上限以內，被推力器、彈射台推得再快也不會穿牆
+func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
+	state.linear_velocity = state.linear_velocity.limit_length(_MAX_SPEED)
 
 # 被玩家推（跟箱子一樣）：推得動的殼往 dir 的方向動，速度是玩家走路速度的 0.8 倍；推不動的殼不理
 func push(dir: int, speed: float) -> void:
@@ -185,8 +191,9 @@ func _apply_physics() -> void:
 	linear_damp = 0.0 if use_gravity else _FLOAT_DAMP
 	if can_push:
 		freeze = false
+		continuous_cd = RigidBody2D.CCD_MODE_CAST_SHAPE
 		collision_layer = Layers.BOX
-		collision_mask = Layers.PLAYER | Layers.TERRAIN | Layers.BOX
+		collision_mask = Layers.PLAYER | Layers.TERRAIN | Layers.BOX | Layers.ENEMY
 	else:
 		freeze_mode = RigidBody2D.FREEZE_MODE_STATIC
 		freeze = true

@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://blocks/RespawnHandler.tscn" id="6"]
 [ext_resource type="Script" path="res://levels/_shared/CameraRig.gd" id="7"]
 [ext_resource type="PackedScene" path="res://blocks/Box.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://blocks/Enemy.tscn" id="9"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
 size = Vector2(16, 96)
@@ -35,6 +36,9 @@ position = Vector2(200, 248)
 [node name="BoxHeavy" parent="Room" instance=ExtResource("8")]
 position = Vector2(300, 248)
 weight = 1
+
+[node name="Enemy" parent="Room" instance=ExtResource("9")]
+position = Vector2(370, 240)
 
 [node name="BoxWall" parent="Room" instance=ExtResource("8")]
 position = Vector2(424, 248)

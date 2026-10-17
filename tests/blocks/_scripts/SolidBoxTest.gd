@@ -1,6 +1,6 @@
 extends Node2D
 
-# 手動驗證用（U241、U242）：實體箱子。地上有推不動的箱子（BoxFixed）、輕箱子、重箱子、一個靠在右邊牆上的箱子；
+# 手動驗證用（U241～U243）：實體箱子。地上有推不動的箱子（BoxFixed）、輕箱子、重箱子、一隻敵人、一個靠在右邊牆上的箱子；
 # 左邊有一個高台，要推箱子過去踩著才跳得上去。
 
 @onready var _player: CharacterBody2D = $Player
@@ -8,6 +8,7 @@ extends Node2D
 @onready var _heavy: RigidBody2D = $Room/BoxHeavy
 @onready var _wall_box: RigidBody2D = $Room/BoxWall
 @onready var _fixed: RigidBody2D = $Room/BoxFixed
+@onready var _enemy: CharacterBody2D = $Room/Enemy
 
 # 印出操作說明，先自動檢查一輪，檢查完把東西放回原位
 func _ready() -> void:
@@ -17,6 +18,8 @@ func _ready() -> void:
 	print("[測試] ③ 推右邊靠牆的箱子：推不動，人也過不去")
 	print("[測試] ④ 把輕箱子推到左邊高台下面，踩著箱子跳上高台")
 	print("[測試] ⑤ 最左邊的箱子（BoxFixed，can_push 取消勾）：推不動、站得上去")
+	print("[測試] ⑥ 敵人走到箱子會轉身；把箱子推向敵人，箱子停在敵人前面，不會疊在一起")
+	print("[測試] ⑦ 按 T：輕箱子以每秒 3000 像素射向右邊的牆（推力器選「疊加」連推幾次就會這麼快），不會穿過去")
 	await get_tree().physics_frame
 	await _auto_check()
 	get_tree().call_group("box", "reset")
@@ -24,6 +27,7 @@ func _ready() -> void:
 
 # 自動檢查：站在箱子上、推輕的、推重的、推靠牆的
 func _auto_check() -> void:
+	_enemy.set_physics_process(false)
 	var light_start := _light.global_position
 	_player.teleport(light_start + Vector2(0, -40))
 	await _frames(40)
@@ -59,6 +63,37 @@ func _auto_check() -> void:
 	_player.teleport(fixed_start + Vector2(0, -40))
 	await _frames(40)
 	_check("推不動的箱子：站得上去", _player.is_on_floor() and _player.global_position.y < fixed_start.y - 14.0)
+
+	_player.teleport(Vector2(-150, 95))
+	var enemy_x := _enemy.global_position.x
+	_place(_heavy, Vector2(enemy_x - 40, light_start.y))
+	for i in 30:
+		_heavy.linear_velocity.x = 300.0
+		await get_tree().physics_frame
+	_check("箱子撞到敵人會停下，不會穿過去疊在一起", _heavy.global_position.x <= enemy_x - 16.0 + 1.0)
+
+	await _shoot_at_wall()
+	_enemy.set_physics_process(true)
+	_check("箱子被推得很快（每秒 3000 像素）也不會穿牆", _light.global_position.x <= 192.0 - 8.0 + 1.0)
+
+# 把輕箱子放到牆前面，以每秒 3000 像素往右射（推力器選「疊加」連推幾次就會這麼快）
+func _shoot_at_wall() -> void:
+	_place(_light, Vector2(120, 120))
+	_light.linear_velocity = Vector2(3000, 0)
+	await _frames(20)
+
+# 把箱子瞬間搬到某個位置、速度歸零（物理引擎裡的位置也一起改）
+func _place(box: RigidBody2D, at: Vector2) -> void:
+	box.linear_velocity = Vector2.ZERO
+	PhysicsServer2D.body_set_state(box.get_rid(), PhysicsServer2D.BODY_STATE_TRANSFORM, Transform2D(0.0, at))
+	box.global_position = at
+
+# 除錯按鍵：T 把輕箱子射向牆
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_T:
+		print("[測試] 輕箱子射向牆")
+		await _shoot_at_wall()
+		print("[測試] 輕箱子停在 x = %.0f（牆的左邊是 184）" % _light.global_position.x)
 
 # 按住右鍵走幾個物理幀
 func _walk_right(n: int) -> void:
