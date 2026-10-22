@@ -84,6 +84,8 @@ press = 6
 corner = 1
 distance_x = 56
 show_on = 1
+label_style = 1
+custom_label = "攻擊"
 
 [node name="Pause" parent="." instance=ExtResource("10")]
 press = 5

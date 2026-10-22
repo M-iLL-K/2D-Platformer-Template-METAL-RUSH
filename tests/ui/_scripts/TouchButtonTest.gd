@@ -1,7 +1,7 @@
 extends Node2D
 
 # 手機按鈕（U226）：開場先自動假裝手指按一輪、印出檢查結果，之後可以用滑鼠點按鈕手動測。
-# 左下 ◀ ▶、右下「跳」「F」（F 是近戰的攻擊鍵）、右上暫停；左上的 ▲ 選「只在觸控裝置」，電腦上應該看不到。
+# 左下 ◀ ▶、右下「跳」「攻擊」（代表 F 鍵＝近戰的攻擊鍵，字是自訂的，U249）、右上暫停；左上的 ▲ 選「只在觸控裝置」，電腦上應該看不到。
 
 @onready var _left: Control = $Left
 @onready var _right: Control = $Right
@@ -16,18 +16,21 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await _run_checks()
 	print("[測試] ── 手動測試 ──")
-	print("[測試] ① 左下 ◀ ▶、右下「跳」「F」、右上暫停鈕，半透明、不跟著鏡頭跑；左上看不到 ▲（只在觸控裝置顯示）")
+	print("[測試] ① 左下 ◀ ▶、右下「跳」「攻擊」、右上暫停鈕，半透明、不跟著鏡頭跑；左上看不到 ▲（只在觸控裝置顯示）")
 	print("[測試] ② 用滑鼠按住 ◀：角色往左走，按鈕變亮；放開就停")
 	print("[測試] ③ 按住 ◀ 不放滑到 ▶：換成往右走")
-	print("[測試] ④ 點「跳」會跳、按久跳比較高；點「F」角色揮擊")
+	print("[測試] ④ 點「跳」會跳、按久跳比較高；點「攻擊」角色揮擊")
 	print("[測試] ⑤ 點右上暫停鈕：出現暫停選單；再點一次：關掉")
 	print("[測試] ⑥ 選一顆按鈕改 corner、distance_x／distance_y、button_size、opacity，編輯器裡馬上看到；press 選「鍵盤按鍵」才出現 key")
-	print("[測試] ⑦ 有手機的話：匯出 Web 用手機瀏覽器開，左上 ▲ 會出現，兩根手指可以一邊走一邊跳")
+	print("[測試] ⑦ 選 Attack：label_style 選「預設」，custom_label 欄位藏起來、按鈕改寫「F」；選回「自訂」欄位又出現")
+	print("[測試] ⑧ custom_label 清成空白：場景樹出現黃色驚嘆號、按鈕照預設寫「F」；打很長的字：字自動縮小，縮到最小還放不下就出現黃色驚嘆號，按 F6 輸出面板也有中文警告")
+	print("[測試] ⑨ 有手機的話：匯出 Web 用手機瀏覽器開，左上 ▲ 會出現，兩根手指可以一邊走一邊跳")
 
 # 假裝手指按下、滑動、放開，檢查鍵有沒有跟著按住、放開
 func _run_checks() -> void:
 	print("[測試] ── 自動檢查 ──")
 	_check("左上 ▲（只在觸控裝置）在沒有觸控螢幕的電腦上藏起來", not _touch_only.visible or DisplayServer.is_touchscreen_available())
+	_check("「攻擊」鍵的自訂字沒有問題（不空白、放得下）", _attack.call("_label_problems").is_empty())
 	_check("按鈕移進 CanvasLayer（不跟著鏡頭跑）", _left.get_parent() is CanvasLayer)
 
 	_touch(0, _left, true)
@@ -46,10 +49,10 @@ func _run_checks() -> void:
 
 	_touch(2, _attack, true)
 	await _frames()
-	_check("按「F」：F 鍵按著", Input.is_physical_key_pressed(KEY_F))
+	_check("按「攻擊」：F 鍵按著", Input.is_physical_key_pressed(KEY_F))
 	_touch(2, _attack, false)
 	await _frames()
-	_check("放開「F」：F 鍵放開", not Input.is_physical_key_pressed(KEY_F))
+	_check("放開「攻擊」：F 鍵放開", not Input.is_physical_key_pressed(KEY_F))
 
 	_mouse(_left, true, InputEvent.DEVICE_ID_EMULATION)
 	await _frames()

@@ -94,6 +94,7 @@ Claude Code 在這個專案裡的所有對話回覆、進度回報、驗收結�
 `ValueSettings.display_name`（數值在 HUD、跳字上顯示的名字，空白就顯示 `kind`）同屬顯示文字例外（見 `documents/progress.md` U166）。
 `UIRoot.game_name`／`hook`（標題畫面的遊戲名稱、一行小字，空白就用範本裡原本的字）同屬顯示文字例外（見 `documents/progress.md` U189）。
 `Cheat.label`（作弊選單勾選框上的字，空白就用「作弊：」加上開了哪些功能）同屬顯示文字例外（見 `documents/progress.md` U236）。
+`TouchButton.custom_label`（手機按鈕上寫的字，`label_style` 選「自訂」才出現）同屬顯示文字例外：空白時黃色驚嘆號＋執行時中文警告、照預設顯示；字太長自動縮小，縮到最小還放不下時黃色驚嘆號＋中文警告（見 `documents/progress.md` U249）。
 
 **資源欄位例外（講師決定）**：`Juice_Sound.custom_sound`（`AudioStream`）讓學員把自己的音檔從檔案系統拖進欄位，屬於「拖」而不是打字。
 只在下拉選「自訂」時出現；空白時編輯器黃色驚嘆號＋執行時中文警告，並改用預設值照常運作（見 `documents/03_game_feel_juice.md` §3.1）。

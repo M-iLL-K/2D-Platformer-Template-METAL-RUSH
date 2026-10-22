@@ -237,7 +237,7 @@ Input Map 沒有「觸控」可以加，所以手機操控做成畫面上的虛�
 
 | 零件 | 繼承 | 做什麼 |
 |---|---|---|
-| `TouchButton` | `Control` | U226。`press` 下拉：左／右／上／下／跳／暫停／鍵盤按鍵（選了才出現 `key`）。左右上下跳用 `Input.action_press`，暫停送一下 Esc，鍵盤按鍵送假的 `InputEventKey`（能力、機制卡用 `bind_key` 綁的鍵也按得到）。`corner`、`distance_x`／`distance_y`、`button_size`、`opacity`、`texture`（空白畫圓角框＋箭頭或字）。在 `_input` 自己處理 `InputEventScreenTouch`／`ScreenDrag`，多指同時按、滑動換按；觸控模擬出來的滑鼠事件（`DEVICE_ID_EMULATION`）不重複算；暫停鈕 `PROCESS_MODE_ALWAYS`，其他按鈕暫停時放開；看不到就不收輸入 |
+| `TouchButton` | `Control` | U226。`press` 下拉：左／右／上／下／跳／暫停／鍵盤按鍵（選了才出現 `key`）。左右上下跳用 `Input.action_press`，暫停送一下 Esc，鍵盤按鍵送假的 `InputEventKey`（能力、機制卡用 `bind_key` 綁的鍵也按得到）。`corner`、`distance_x`／`distance_y`、`button_size`、`opacity`、`texture`（空白畫圓角框＋箭頭或字）、`label_style` 下拉（預設／自訂，U249；選自訂才出現 `custom_label`，有填就取代箭頭、暫停符號、字，有圖也疊在圖上；字放不下從 12 縮到 6）。在 `_input` 自己處理 `InputEventScreenTouch`／`ScreenDrag`，多指同時按、滑動換按；觸控模擬出來的滑鼠事件（`DEVICE_ID_EMULATION`）不重複算；暫停鈕 `PROCESS_MODE_ALWAYS`，其他按鈕暫停時放開；看不到就不收輸入 |
 | `TouchControls` | `Control` | U227。套件：Left、Right、Jump、Pause 四顆 `TouchButton` 擺好（子按鈕 `show_on` 一直顯示，由套件決定整組要不要顯示）；`show_on`、`opacity` 管整組 |
 | `TouchStick` | `Control` | U228。搖桿：左右用 `Input.action_press(動作, 力道)`（Player 用 `get_axis`，推一半半速）；上下推超過一半才算；`dead_zone`、`use_up_down`、`stick_size`；只放開自己按住的動作 |
 | `TouchSwitch` | `HBoxContainer` | U231。玩家選「自動／顯示／隱藏」；`style` 勾選框／下拉選單／不顯示（只當接口）；接口 `set_on`／`set_off`／`show_controls`／`hide_controls`／`auto_controls`／`toggle_controls` |

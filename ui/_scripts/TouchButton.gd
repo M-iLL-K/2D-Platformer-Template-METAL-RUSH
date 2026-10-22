@@ -39,6 +39,7 @@ extends Control
 	set(value):
 		button_size = value
 		_place()
+		update_configuration_warnings()
 ## 看起來多透明，越小越透明（按下去時會變清楚一點）
 @export_range(0.1, 1.0) var opacity: float = 0.5:
 	set(value):
@@ -52,6 +53,19 @@ extends Control
 	set(value):
 		texture = value
 		queue_redraw()
+## 按鈕上寫什麼：預設（箭頭、暫停符號、「跳」或鍵名）；選自訂就自己打字，例如「攻擊」
+@export_enum("預設", "自訂") var label_style: int = 0:
+	set(value):
+		label_style = value
+		notify_property_list_changed()
+		update_configuration_warnings()
+		queue_redraw()
+## 按鈕上要寫的字（「label_style」選自訂時才出現）；空白就照預設顯示，字太長會自動縮小
+@export var custom_label: String = "":
+	set(value):
+		custom_label = value
+		update_configuration_warnings()
+		queue_redraw()
 
 const PRESS_JUMP := 4
 const PRESS_PAUSE := 5
@@ -62,6 +76,9 @@ const _LAYER := 5
 const _NO_TOUCH := -1
 const _MOUSE := -2
 const _FONT_SIZE := 12
+const _MIN_FONT_SIZE := 6
+const _LABEL_PADDING := 4
+const LABEL_CUSTOM := 1
 const _DOWN_OPACITY := 0.3
 const _BOX_COLOR := Color(0.1, 0.1, 0.15, 0.8)
 const _BOX_DOWN_COLOR := Color(0.45, 0.45, 0.55, 0.9)
@@ -87,6 +104,9 @@ func _ready() -> void:
 		var message := "Input Map 裡找不到「%s」，這顆按鈕按了不會有反應：到「專案設定 → Input Map」把它加回來" % _ACTIONS[press]
 		push_warning("[%s] %s" % [name, message])
 		printerr("⚠ [%s] %s" % [name, message])
+	for problem in _label_problems():
+		push_warning("[%s] %s" % [name, problem])
+		printerr("⚠ [%s] %s" % [name, problem])
 	get_viewport().size_changed.connect(_place)
 	if not (get_parent() is CanvasLayer or get_parent() is Control):
 		_move_to_layer.call_deferred()
@@ -112,16 +132,47 @@ func _notification(what: int) -> void:
 		if _touch != _NO_TOUCH and (what != NOTIFICATION_VISIBILITY_CHANGED or not is_visible_in_tree()):
 			_release()
 
-# 選鍵盤按鍵以外的時候隱藏 key 欄位
+# 選鍵盤按鍵以外的時候隱藏 key 欄位；字選預設的時候隱藏 custom_label 欄位
 func _validate_property(property: Dictionary) -> void:
 	if property.name == "key" and press != PRESS_KEY:
 		property.usage = PROPERTY_USAGE_NONE
+	elif property.name == "custom_label" and label_style != LABEL_CUSTOM:
+		property.usage = PROPERTY_USAGE_NONE
 
-# 編輯器裡的黃色驚嘆號：選了鍵盤按鍵卻沒選是哪個鍵
+# 編輯器裡的黃色驚嘆號：選了鍵盤按鍵卻沒選是哪個鍵、自訂的字空白或太長
 func _get_configuration_warnings() -> PackedStringArray:
+	var warnings := PackedStringArray()
 	if press == PRESS_KEY and key == KEY_NONE:
-		return PackedStringArray(["「代表」選了鍵盤按鍵，但 key 還沒選是哪個鍵，按了不會有反應"])
+		warnings.append("「代表」選了鍵盤按鍵，但 key 還沒選是哪個鍵，按了不會有反應")
+	warnings.append_array(_label_problems())
+	return warnings
+
+# 自訂的字有什麼問題：空白（改用預設的）、縮到最小還是放不下
+func _label_problems() -> PackedStringArray:
+	if label_style != LABEL_CUSTOM:
+		return PackedStringArray()
+	if _custom_text().is_empty():
+		return PackedStringArray(["label_style 選了自訂，但 custom_label 是空白的，先照預設顯示"])
+	var font := get_theme_default_font()
+	if font != null and _text_width(font, _custom_text(), _MIN_FONT_SIZE) > _label_room():
+		return PackedStringArray(["custom_label「%s」太長，縮到最小還是超出按鈕：字少一點，或把 button_size 拉大" % _custom_text()])
 	return PackedStringArray()
+
+# 自訂的字（去掉頭尾空白）
+func _custom_text() -> String:
+	return custom_label.strip_edges()
+
+# 有沒有要寫自訂的字
+func _uses_custom_label() -> bool:
+	return label_style == LABEL_CUSTOM and not _custom_text().is_empty()
+
+# 按鈕裡可以寫字的寬度
+func _label_room() -> float:
+	return float(button_size - _LABEL_PADDING * 2)
+
+# 某段字用某個字級寫出來多寬
+func _text_width(font: Font, text: String, font_size: int) -> float:
+	return font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 
 # 手指（或滑鼠左鍵）按下、滑動、放開：按在這顆上面就按住，離開或放開就放開
 func _input(event: InputEvent) -> void:
@@ -223,15 +274,17 @@ func _screen_size() -> Vector2:
 		return Vector2(ProjectSettings.get_setting("display/window/size/viewport_width"), ProjectSettings.get_setting("display/window/size/viewport_height"))
 	return get_viewport().get_visible_rect().size
 
-# 畫按鈕：有圖就畫圖（按下時變暗），沒圖就畫圓角框＋箭頭、暫停符號或字
+# 畫按鈕：有圖就畫圖（按下時變暗），沒圖就畫圓角框＋箭頭、暫停符號或字；有自訂的字就改寫那段字
 func _draw() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
 	var down := _touch != _NO_TOUCH
 	var alpha := minf(1.0, opacity + (_DOWN_OPACITY if down else 0.0))
+	var line := Color(_LINE_COLOR, _LINE_COLOR.a * alpha)
 	if texture != null:
 		draw_texture_rect(texture, rect, false, Color(0.7, 0.7, 0.7, alpha) if down else Color(1, 1, 1, alpha))
+		if _uses_custom_label():
+			_draw_label(_custom_text(), line)
 		return
-	var line := Color(_LINE_COLOR, _LINE_COLOR.a * alpha)
 	var fill := _BOX_DOWN_COLOR if down else _BOX_COLOR
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(fill, fill.a * alpha)
@@ -239,6 +292,9 @@ func _draw() -> void:
 	box.set_border_width_all(1)
 	box.set_corner_radius_all(int(size.x / 4.0))
 	draw_style_box(box, rect)
+	if _uses_custom_label():
+		_draw_label(_custom_text(), line)
+		return
 	var center := size / 2.0
 	var half := size.x * 0.2
 	match press:
@@ -257,13 +313,16 @@ func _draw() -> void:
 		_:
 			_draw_label("跳" if press == PRESS_JUMP else OS.get_keycode_string(key), line)
 
-# 在按鈕正中間寫一行字
+# 在按鈕正中間寫一行字，放不下就把字縮小（最小縮到 _MIN_FONT_SIZE）
 func _draw_label(text: String, color: Color) -> void:
 	var font := get_theme_default_font()
 	if font == null:
 		return
-	var y := (size.y - font.get_height(_FONT_SIZE)) / 2.0 + font.get_ascent(_FONT_SIZE)
-	draw_string(font, Vector2(0, roundf(y)), text, HORIZONTAL_ALIGNMENT_CENTER, size.x, _FONT_SIZE, color)
+	var font_size := _FONT_SIZE
+	while font_size > _MIN_FONT_SIZE and _text_width(font, text, font_size) > _label_room():
+		font_size -= 1
+	var y := (size.y - font.get_height(font_size)) / 2.0 + font.get_ascent(font_size)
+	draw_string(font, Vector2(0, roundf(y)), text, HORIZONTAL_ALIGNMENT_CENTER, size.x, font_size, color)
 
 # 移進一個新的 CanvasLayer，之後固定在畫面上、不跟著鏡頭跑
 func _move_to_layer() -> void:
