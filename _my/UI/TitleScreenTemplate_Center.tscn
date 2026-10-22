@@ -1,0 +1,117 @@
+[gd_scene format=3 uid="uid://fv6iqni7vc4n"]
+
+[ext_resource type="Script" uid="uid://w61x3i18lq1x" path="res://ui/_scripts/UIRoot.gd" id="1"]
+[ext_resource type="PackedScene" path="res://ui/HudText.tscn" id="2"]
+[ext_resource type="Texture2D" uid="uid://dxgxlf6uyvcgn" path="res://_my/art/Metal.png" id="2_q0i7n"]
+[ext_resource type="AudioStream" uid="uid://cn48k67ibf1ht" path="res://_my/sounds/lofi.wav" id="2_vjd0o"]
+[ext_resource type="PackedScene" path="res://ui/MenuAction.tscn" id="3"]
+[ext_resource type="AudioStream" uid="uid://deutegu8ts6rh" path="res://_my/sounds/shocked.wav" id="3_6jq43"]
+[ext_resource type="AudioStream" uid="uid://cyqs46okqp3sk" path="res://_my/sounds/error.wav" id="4_dy1ub"]
+[ext_resource type="PackedScene" uid="uid://3s02mmn773ec" path="res://ui/SettingsPage.tscn" id="5"]
+
+[node name="TitleScreenTemplate_Center" type="Control" unique_id=1395169084]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1")
+kind = 3
+palette = 8
+style = 4
+art_colors = PackedColorArray()
+music = ExtResource("2_vjd0o")
+music_volume = 1.0
+press_sound = 7
+custom_press_sound = ExtResource("3_6jq43")
+select_sound = 7
+custom_select_sound = ExtResource("4_dy1ub")
+sound_volume = 1.0
+
+[node name="Background" type="Panel" parent="." unique_id=780105895]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="KeyArt" type="TextureRect" parent="." unique_id=1559145421]
+texture_filter = 5
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_q0i7n")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Layout" type="VBoxContainer" parent="." unique_id=2043771093]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+alignment = 2
+
+[node name="Box" type="PanelContainer" parent="Layout" unique_id=762400633]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+
+[node name="List" type="VBoxContainer" parent="Layout/Box" unique_id=132648981]
+layout_mode = 2
+offset_transform_enabled = true
+theme_override_constants/separation = 6
+
+[node name="Buttons" type="HBoxContainer" parent="Layout/Box/List" unique_id=1102431315]
+layout_mode = 2
+size_flags_horizontal = 4
+offset_transform_enabled = true
+theme_override_constants/separation = 40
+
+[node name="Start" parent="Layout/Box/List/Buttons" unique_id=2068902163 instance=ExtResource("3")]
+self_modulate = Color(1, 1, 1, 0.08235294)
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "START"
+action = 3
+level = "_my/_Template1.tscn"
+level_uid = "uid://b7v106ynssl83"
+
+[node name="Settings" parent="Layout/Box/List/Buttons" unique_id=863233446 instance=ExtResource("3")]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "SETTINGS"
+action = 5
+
+[node name="Quit" parent="Layout/Box/List/Buttons" unique_id=227017785 instance=ExtResource("3")]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+text = "> QUIT GAME <"
+action = 2
+
+[node name="Hook" parent="Layout/Box/List" unique_id=806970125 instance=ExtResource("2")]
+layout_mode = 2
+theme_type_variation = &"HintLabel"
+text = "MADE BY OMINO OS"
+horizontal_alignment = 1
+
+[node name="warning" parent="Layout/Box/List" unique_id=1914470959 instance=ExtResource("2")]
+self_modulate = Color(1, 0, 0, 0.35686275)
+layout_mode = 2
+theme_type_variation = &"HintLabel"
+text = "WARNING: THIS GAME CONTAINS LOUD AUDIO AND HEAVY SCREEN SHAKE."
+horizontal_alignment = 1
+
+[node name="SettingsPage" parent="." unique_id=1620713302 instance=ExtResource("5")]
+layout_mode = 1

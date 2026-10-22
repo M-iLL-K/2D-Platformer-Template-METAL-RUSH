@@ -1,0 +1,105 @@
+[gd_scene format=3 uid="uid://cm2egeqcgg6xs"]
+
+[ext_resource type="Script" uid="uid://w61x3i18lq1x" path="res://ui/_scripts/UIRoot.gd" id="1_js1ds"]
+[ext_resource type="PackedScene" path="res://ui/HudText.tscn" id="2_gqu7h"]
+[ext_resource type="PackedScene" path="res://ui/VolumeSlider.tscn" id="3_5xshx"]
+[ext_resource type="PackedScene" path="res://ui/MenuAction.tscn" id="4_1vl16"]
+
+[node name="PauseMenuTemplate" type="Control" unique_id=965039932]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_js1ds")
+kind = 1
+art_colors = PackedColorArray()
+
+[node name="Dim" type="ColorRect" parent="." unique_id=1597109088]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=897192063]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center" unique_id=1617028914]
+layout_mode = 2
+
+[node name="List" type="VBoxContainer" parent="Center/Panel" unique_id=1920452614]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" parent="Center/Panel/List" unique_id=468396321 instance=ExtResource("2_gqu7h")]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="Volumes" type="GridContainer" parent="Center/Panel/List" unique_id=244117829]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+columns = 2
+
+[node name="MasterName" parent="Center/Panel/List/Volumes" unique_id=1300456405 instance=ExtResource("2_gqu7h")]
+layout_mode = 2
+text = "MASTER VOLUME"
+
+[node name="Master" parent="Center/Panel/List/Volumes" unique_id=1105994185 instance=ExtResource("3_5xshx")]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SfxName" parent="Center/Panel/List/Volumes" unique_id=2128218806 instance=ExtResource("2_gqu7h")]
+layout_mode = 2
+text = "SOUND EFFECTS"
+
+[node name="Sfx" parent="Center/Panel/List/Volumes" unique_id=945160229 instance=ExtResource("3_5xshx")]
+layout_mode = 2
+theme_override_constants/separation = 4
+bus = 1
+
+[node name="BgmName" parent="Center/Panel/List/Volumes" unique_id=1782001801 instance=ExtResource("2_gqu7h")]
+layout_mode = 2
+text = "MUSIC"
+
+[node name="Bgm" parent="Center/Panel/List/Volumes" unique_id=825767540 instance=ExtResource("3_5xshx")]
+layout_mode = 2
+theme_override_constants/separation = 4
+bus = 2
+
+[node name="Resume" parent="Center/Panel/List" unique_id=2104747375 instance=ExtResource("4_1vl16")]
+layout_mode = 2
+text = "RESUME"
+
+[node name="Restart" parent="Center/Panel/List" unique_id=199183314 instance=ExtResource("4_1vl16")]
+layout_mode = 2
+text = "RESTART :3 (CLICK MEEE)"
+action = 1
+
+[node name="ToTitle" parent="Center/Panel/List" unique_id=1299585033 instance=ExtResource("4_1vl16")]
+layout_mode = 2
+text = "MAIN MENU"
+action = 4
+
+[node name="Quit" parent="Center/Panel/List" unique_id=277687585 instance=ExtResource("4_1vl16")]
+layout_mode = 2
+text = "EXIT GAME"
+action = 2
+
+[node name="Hint" parent="Center/Panel/List" unique_id=20021103 instance=ExtResource("2_gqu7h")]
+layout_mode = 2
+theme_type_variation = &"HintLabel"
+text = "PRESS ESC TO RESUME"
